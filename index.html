@@ -29,6 +29,11 @@
 
             <input type="email" id="email-input" placeholder="電子信箱 (Email)" required />
             <input type="password" id="password-input" placeholder="密碼 (Password 六位數以上)" required />
+
+            <div style="display:flex; align-items:center; gap:5px; margin: 8px 0; font-size: 0.85rem; color: #4b5563;">
+    <input type="checkbox" id="chk-remember-me" style="margin:0;" />
+    <label for="chk-remember-me">記住我的帳號與密碼</label>
+</div>
             
             <div id="register-extended-fields" class="hidden">
                 <input type="text" id="realname-input" placeholder="真實姓名" />
@@ -97,7 +102,15 @@
     </div>
 
     <!-- 🌟 Phase 1 新架構進入點 🌟 -->
-    <!-- 將過去零散的傳統 script 改為模組化進入點 -->
+<!-- Firebase CDN SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <!-- 請確保這裡有 Firebase 的 initializeApp 設定 (或載入你原本的 firebase-config.js) -->
+    <script src="js/firebase-config.js"></script>
+
+    <!-- 模組進入點 -->
     <script type="module" src="./src/app.js"></script>
 </body>
 </html>
