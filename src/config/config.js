@@ -9,7 +9,7 @@ export const CONFIG = {
         RETENTION_TARGET: 0.85,
     },
     SPEECH: {
-        LANGUAGE: 'en-US',
+        LANGUAGE: 'ko-KR',
         PITCH: 1.0,
         RATE: 1.0,
     }
