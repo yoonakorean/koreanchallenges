@@ -5,15 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>韓語雲端遊戲化學習系統 - Firebase 版</title>
     
-    <!-- 圖示與樣式庫 (保留原樣) -->
+    <!-- 圖示與樣式庫 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     
-    <!-- Firebase SDK (保留原樣 CDN) -->
+    <!-- Firebase SDK (CDN) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+    <!-- Firebase 設定檔 -->
     <script src="js/firebase-config.js"></script>
 </head>
 <body>
@@ -31,28 +32,36 @@
 
             <input type="email" id="email-input" placeholder="電子信箱 (Email)" required />
             <input type="password" id="password-input" placeholder="密碼 (Password 六位數以上)" required />
-
-            <div style="display:flex; align-items:center; gap:5px; margin: 8px 0; font-size: 0.85rem; color: #4b5563;">
-    <input type="checkbox" id="chk-remember-me" style="margin:0;" />
-    <label for="chk-remember-me">記住我的帳號與密碼</label>
-</div>
             
+            <!-- 註冊延伸欄位 -->
             <div id="register-extended-fields" class="hidden">
                 <input type="text" id="realname-input" placeholder="真實姓名" />
                 <input type="date" id="birthday-input" placeholder="生日" />
-                <input type="text" id="nickname-input" placeholder="顯示暱稱" required />
+                <!-- 需求 2：修改顯示文字 -->
+                <input type="text" id="nickname-input" placeholder="顯示暱稱（不可修改）" required />
+            </div>
+
+            <!-- 需求 1：重新排版記住我勾選框 (強制橫向、置於按鈕上方) -->
+            <div style="display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin: 12px 0 6px 0; width: 100%; box-sizing: border-box;">
+                <input type="checkbox" id="chk-remember-me" style="width: auto; margin: 0; cursor: pointer;" />
+                <label for="chk-remember-me" style="font-size: 0.85rem; color: #4b5563; cursor: pointer; white-space: nowrap; user-select: none;">記住我的帳號與密碼</label>
             </div>
 
             <div style="margin-top: 10px;">
-                <button class="base-btn btn-primary" id="btn-auth-submit">進入挑戰</button>
+                <button class="base-btn btn-primary" id="btn-auth-submit" style="width: 100%;">進入挑戰</button>
             </div>
         </div>
     </div>
 
     <!-- 主學習畫面 -->
     <div class="container hidden" id="main-app">
-        <div class="user-meta-bar">
-            <span><i class="fa-solid fa-user"></i> <span id="lbl-username">學生</span> (🔥<span id="lbl-login-days">0</span>天)</span>
+        <div class="user-meta-bar" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span><i class="fa-solid fa-user"></i> <span id="lbl-username">學生</span></span>
+                <!-- 需求 3：新增登出鍵 -->
+                <button id="btn-logout" style="margin-left: 8px; padding: 2px 8px; font-size: 0.75rem; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">登出</button>
+                <span style="margin-left: 10px;">(🔥<span id="lbl-login-days">0</span>天)</span>
+            </div>
             <span>🪙 XP: <span id="lbl-xp">0</span> | <span id="lbl-user-level">1A</span></span>
         </div>
 
@@ -103,7 +112,6 @@
         </div>
     </div>
 
-    <!-- 🌟 Phase 1 新架構進入點 🌟 -->
     <!-- 模組進入點 -->
     <script type="module" src="./src/app.js"></script>
 </body>
