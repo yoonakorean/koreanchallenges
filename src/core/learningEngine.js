@@ -18,15 +18,15 @@ export const AnswerChecker = {
 export const ResultProcessor = {
     processResult(userAnswerResult, metadata) {
         if (!userAnswerResult.isCorrect) {
-            AnalyticsService.recordWrongWord(metadata.wordId, metadata.stage);
+            AnalyticsService.recordWrongWord(metadata.wordId, metadata.stageKey);
         }
         AnalyticsService.recordResponseTime(metadata.questionId, metadata.duration);
-        // 計算 XP、扣 HP...
+        return userAnswerResult;
     }
 };
 
 export const LearningEngine = {
     goNextQuestion(currentContext) {
-        // 取得下一題邏輯
+        console.log(`[LearningEngine] 前往下一題...`, currentContext);
     }
 };
