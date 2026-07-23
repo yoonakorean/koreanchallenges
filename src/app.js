@@ -4,6 +4,8 @@ import { AuthService } from './services/auth.js';
 import { FirestoreService } from './services/firebase.js';
 
 let authMode = 'login'; 
+let currentSelectedUnit = 1;
+let currentSelectedStage = 1;
 
 function loadRememberedCredentials() {
     const savedEmail = localStorage.getItem('saved_email');
@@ -31,45 +33,87 @@ function handleRememberMe(email, password) {
 }
 
 /**
- * 🗺️ 地圖切換與關卡控制邏輯 (Step 1)
+ * 🗺️ 視圖切換與彈窗互動控制 (Step 1)
  */
-function setupMapEventListeners() {
+function setupNavigationAndModals() {
     const mapView = document.getElementById('map-view');
+    const profileView = document.getElementById('profile-view');
     const gameView = document.getElementById('game-view');
-    const btnBackToMap = document.getElementById('btn-back-to-map');
 
-    // 1. 監聽地圖上的所有關卡按鈕
+    const modalLocked = document.getElementById('modal-locked');
+    const modalWarmupAsk = document.getElementById('modal-warmup-ask');
+    const modalLogoutConfirm = document.getElementById('modal-logout-confirm');
+
+    // 1. 點擊學生姓名 ➔ 開啟 Profile 視圖 (問題 1 修正)
+    document.getElementById('btn-profile-trigger')?.addEventListener('click', () => {
+        mapView?.classList.add('hidden');
+        gameView?.classList.add('hidden');
+        profileView?.classList.remove('hidden');
+    });
+
+    // 2. Profile 頁面返回地圖
+    document.getElementById('btn-profile-back-map')?.addEventListener('click', () => {
+        profileView?.classList.add('hidden');
+        mapView?.classList.remove('hidden');
+    });
+
+    // 3. 地圖關卡點擊事件
     document.querySelectorAll('.stage-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const target = e.currentTarget;
-            const unit = target.getAttribute('data-unit');
-            const stage = target.getAttribute('data-stage');
+            currentSelectedUnit = target.getAttribute('data-unit');
+            currentSelectedStage = target.getAttribute('data-stage');
             const isLocked = target.classList.contains('locked');
 
             if (isLocked) {
-                // 點擊未解鎖關卡時彈出提示
-                alert(`🔒 關卡鎖定中：需先通過單元 ${unit} 的階段 ${stage - 1} 才能挑戰喔！`);
+                // 問題 4 修正：跳出美化鎖定 Modal
+                modalLocked?.classList.remove('hidden');
             } else {
-                // 進入開放關卡，切換至答題畫面
-                console.log(`[Map Engine] 進入 單元 ${unit} - 階段 ${stage}`);
-                
-                // 更新答題頁面標題
-                const lblUnitTitle = document.getElementById('lbl-current-unit-title');
-                if (lblUnitTitle) lblUnitTitle.innerText = `單元 ${unit} - 階段 ${stage}`;
-
-                // 畫面滑動切換
-                mapView?.classList.add('hidden');
-                gameView?.classList.remove('hidden');
-
-                // [預留 Step 3/4]：此處將觸發課前暖身 Modal 或直奔 Stage 1 練習模式
+                // 問題 2 修正：點擊開放關卡時跳出「課前暖身 Modal」
+                modalWarmupAsk?.classList.remove('hidden');
             }
         });
     });
 
-    // 2. 點擊「返回地圖」按鈕
-    btnBackToMap?.addEventListener('click', () => {
+    // 4. 關閉鎖定 Modal
+    document.getElementById('btn-close-locked-modal')?.addEventListener('click', () => {
+        modalLocked?.classList.add('hidden');
+    });
+
+    // 5. 課前暖身 Modal 按鈕回應
+    document.getElementById('btn-warmup-yes')?.addEventListener('click', () => {
+        modalWarmupAsk?.classList.add('hidden');
+        alert("將在 Step 2 為您開啟【單字學習卡 / 句型練習】頁面！");
+    });
+
+    document.getElementById('btn-warmup-no')?.addEventListener('click', () => {
+        modalWarmupAsk?.classList.add('hidden');
+        // 直接進入挑戰
+        const lblUnitTitle = document.getElementById('lbl-current-unit-title');
+        if (lblUnitTitle) lblUnitTitle.innerText = `單元 ${currentSelectedUnit} - 階段 ${currentSelectedStage}`;
+
+        mapView?.classList.add('hidden');
+        gameView?.classList.remove('hidden');
+    });
+
+    // 6. 答題頁面返回地圖
+    document.getElementById('btn-back-to-map')?.addEventListener('click', () => {
         gameView?.classList.add('hidden');
         mapView?.classList.remove('hidden');
+    });
+
+    // 7. Profile 頁面的登出按鈕 (問題 1 登出二次確認)
+    document.getElementById('btn-trigger-logout')?.addEventListener('click', () => {
+        modalLogoutConfirm?.classList.remove('hidden');
+    });
+
+    document.getElementById('btn-logout-no')?.addEventListener('click', () => {
+        modalLogoutConfirm?.classList.add('hidden');
+    });
+
+    document.getElementById('btn-logout-yes')?.addEventListener('click', async () => {
+        modalLogoutConfirm?.classList.add('hidden');
+        await AuthService.logout();
     });
 }
 
@@ -86,7 +130,7 @@ function setupAuthEventListeners() {
     tabLogin?.addEventListener('click', () => {
         authMode = 'login';
         tabLogin.style.fontWeight = 'bold';
-        tabLogin.style.borderBottom = '2px solid var(--primary)';
+        tabLogin.style.borderBottom = '2px solid #4f46e5';
         tabRegister.style.fontWeight = 'normal';
         tabRegister.style.borderBottom = 'none';
         registerFields?.classList.add('hidden');
@@ -95,7 +139,7 @@ function setupAuthEventListeners() {
     tabRegister?.addEventListener('click', () => {
         authMode = 'register';
         tabRegister.style.fontWeight = 'bold';
-        tabRegister.style.borderBottom = '2px solid var(--primary)';
+        tabRegister.style.borderBottom = '2px solid #4f46e5';
         tabLogin.style.fontWeight = 'normal';
         tabLogin.style.borderBottom = 'none';
         registerFields?.classList.remove('hidden');
@@ -135,11 +179,16 @@ function setupAuthEventListeners() {
             loginModal?.classList.add('hidden');
             mainApp?.classList.remove('hidden');
 
+            const username = user.email.split('@')[0];
             const lblUsername = document.getElementById('lbl-username');
-            if (lblUsername) lblUsername.innerText = user.email.split('@')[0];
+            const profileNickname = document.getElementById('profile-nickname');
+            const profileEmail = document.getElementById('profile-email');
 
-            const userProgress = await FirestoreService.loadProgress(user.uid);
-            console.log("已載入使用者進度:", userProgress);
+            if (lblUsername) lblUsername.innerText = username;
+            if (profileNickname) profileNickname.innerText = username;
+            if (profileEmail) profileEmail.innerText = user.email;
+
+            await FirestoreService.loadProgress(user.uid);
         } else {
             loginModal?.classList.remove('hidden');
             mainApp?.classList.add('hidden');
@@ -147,18 +196,10 @@ function setupAuthEventListeners() {
     });
 }
 
-function registerGameStages() {
-    stageRegistry.register(STAGES.VOCAB, {
-        generateQuestion: (data) => ({ type: STAGES.VOCAB, word: data.word, prompt: "請拼出這個單字" }),
-        verify: (ans, target) => ans === target
-    });
-}
-
 export function initApp() {
     console.log("🚀 遊戲系統初始化中...");
-    registerGameStages();
     setupAuthEventListeners();
-    setupMapEventListeners();
+    setupNavigationAndModals();
 }
 
 initApp();
