@@ -226,11 +226,11 @@
         }
 
         .tab-btn {
-            flex: 1; padding: 10px; border: none; background: #f3f4f6;
-            color: #6b7280; border-radius: 12px; cursor: pointer;
+            flex: 1; padding: 10px; border: none; background: #ffffff;
+            color: #6b7280; border-radius: 12px; cursor: pointer; border: 1px solid #e5e7eb;
         }
         .tab-btn.active {
-            background: var(--duo-blue); color: white;
+            background: var(--duo-blue); color: white; border-color: var(--duo-blue);
             box-shadow: 0 3px 0 var(--duo-blue-shadow);
         }
 
@@ -249,6 +249,15 @@
             background: var(--duo-blue);
             color: white;
             border-color: var(--duo-blue-shadow);
+        }
+
+        /* 恢復好友榜與排行榜底色色塊樣式 */
+        .rank-card-box {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 12px;
         }
 
         .hidden { display: none !important; }
@@ -326,7 +335,7 @@
             <p style="font-size: 0.85rem; color:#6b7280; margin-bottom: 15px;">每天陪你一起輕鬆學語言</p>
             
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button id="tab-login" class="tab-btn active">立即登入</button>
+                <button id="tab-login" class="tab-btn active">時間登入</button>
                 <button id="tab-register" class="tab-btn">新用戶註冊</button>
             </div>
 
@@ -526,7 +535,7 @@
         <!-- 視圖 2：右上角個人分頁 (Profile / Leaderboard View) -->
         <div id="profile-view" class="hidden" style="padding: 15px; width: 100%; box-sizing: border-box;">
             
-            <!-- 🌟 頂部導覽區：[返回地圖] 與分頁按鈕 [學習排行榜] / [個人檔案] 同排 -->
+            <!-- 頂部導覽區：[返回地圖] 與分頁按鈕 [學習排行榜] / [個人檔案] 同排 -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <button id="btn-profile-back-map" class="btn-3d btn-3d-secondary" style="padding: 6px 14px;">
                     <i class="fa-solid fa-arrow-left"></i> 返回地圖
@@ -546,24 +555,25 @@
             <div id="sub-page-leaderboard" class="unit-card">
                 <h3 style="margin-top:0; color: #1f2937;"><i class="fa-solid fa-trophy" style="color: var(--duo-gold);"></i> 學習排行榜</h3>
                 
-                <div style="display: flex; gap: 8px; margin-bottom: 12px; background: #f3f4f6; padding: 4px; border-radius: 14px;">
+                <div style="display: flex; gap: 8px; margin-bottom: 12px; background: #f3f4f6; padding: 6px; border-radius: 14px;">
                     <button class="tab-btn active" id="tab-leaderboard-friends">好友榜</button>
                     <button class="tab-btn" id="tab-leaderboard-global">同程度總榜</button>
                 </div>
 
-                <div id="content-rank-friends" style="padding: 10px 0; text-align: center;">
+                <!-- 恢復原版底色色塊區域 -->
+                <div id="content-rank-friends" class="rank-card-box" style="text-align: center;">
                     <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 12px;">[好友榜] 尚未連結好友</p>
                     <button id="btn-open-add-friend" class="btn-3d btn-3d-secondary" style="padding: 8px 16px;">
                         <i class="fa-solid fa-user-plus"></i> 新增好友
                     </button>
                 </div>
 
-                <div id="content-rank-global" class="hidden" style="padding: 15px 0; text-align: center;">
+                <div id="content-rank-global" class="rank-card-box hidden" style="text-align: center;">
                     <p style="font-size: 0.9rem; color: #6b7280; margin: 0;">🏆 1A 程度排行榜連線中...</p>
                 </div>
             </div>
 
-            <!-- 分頁區 2：個人檔案資訊 (預設隱藏) -->
+            <!-- 分頁區 2：個人檔案資訊 -->
             <div id="sub-page-profile" class="unit-card hidden">
                 <h3 style="margin-top:0; color: #1f2937; border-bottom: 2px solid #f3f4f6; padding-bottom: 8px;">
                     <i class="fa-solid fa-id-card" style="color: var(--duo-blue);"></i> 個人檔案
