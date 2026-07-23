@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>韓語雲端遊戲化學習系統 - Duolingo 版</title>
+    <title>多語種雲端遊戲化學習系統 - Duolingo 版</title>
     
     <!-- 圖示與樣式庫 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -29,7 +29,6 @@
             --duo-red-shadow: #ea2b2b;
         }
 
-        /* 3D 按鈕樣式 (Duolingo Style) */
         .btn-3d {
             border: none;
             border-radius: 16px;
@@ -59,7 +58,6 @@
             box-shadow: 0 1px 0 #e5e7eb;
         }
 
-        /* 地圖頁面 */
         .map-container {
             display: flex;
             flex-direction: column;
@@ -125,7 +123,6 @@
             cursor: not-allowed;
         }
 
-        /* 視圖通用 Modal */
         .custom-modal {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -139,7 +136,6 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.25);
         }
 
-        /* Leaderboard Tabs */
         .tab-btn {
             flex: 1; padding: 10px; border: none; background: #f3f4f6;
             font-weight: bold; color: #6b7280; border-radius: 12px; cursor: pointer;
@@ -156,8 +152,8 @@
     <!-- Firebase 登入視窗 -->
     <div class="modal" id="login-modal">
         <div class="modal-content" style="border-radius: 24px;">
-            <h3><i class="fa-solid fa-cloud"></i> 歡迎來到韓語大冒險</h3>
-            <p style="font-size: 0.9rem; color:#6b7280; margin-bottom: 15px;">優娜韓語 每天陪你一起進步</p>
+            <h3><i class="fa-solid fa-cloud"></i> 歡迎來到多語種大冒險</h3>
+            <p style="font-size: 0.9rem; color:#6b7280; margin-bottom: 15px;">每天陪你一起輕鬆學語言</p>
             
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                 <button id="tab-login" style="flex:1; padding: 8px; font-weight: bold; border-bottom: 2px solid var(--duo-blue); background: none; border:none; cursor:pointer;">立即登入</button>
@@ -184,7 +180,7 @@
         </div>
     </div>
 
-    <!-- 鎖定關卡提示 Modal (問題 4 視覺優化) -->
+    <!-- 鎖定關卡提示 Modal -->
     <div id="modal-locked" class="custom-modal hidden">
         <div class="custom-modal-card">
             <div style="font-size: 2.8rem; color: #f59e0b; margin-bottom: 10px;"><i class="fa-solid fa-lock"></i></div>
@@ -230,25 +226,37 @@
                 <span style="margin-left: 8px; font-weight: bold; color: #f59e0b;">🔥<span id="lbl-login-days">0</span>天</span>
             </div>
             <div style="font-weight: bold; color: #4b5563;">
-                🪙 XP: <span id="lbl-xp" style="color: #10b981;">0</span> | <span id="lbl-user-level" style="color: var(--duo-blue);">1A</span>
+                🪙 XP: <span id="lbl-xp" style="color: #10b981;">0</span> | <span id="lbl-user-level" style="color: var(--duo-blue);">韓語 1A</span>
             </div>
         </div>
 
         <!-- 🌟 視圖 1：學習地圖 (Map View) -->
         <div id="map-view" class="map-container">
-            <!-- 程度選擇下拉選單 (支援 認識字母 ~ 6A) -->
-            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <label for="select-level-course" style="font-weight: bold; color: #4b5563;"><i class="fa-solid fa-layer-group"></i> 課程程度：</label>
-                <select id="select-level-course" style="padding: 8px 12px; border-radius: 12px; border: 2px solid #e5e7eb; font-weight: bold; background: white; cursor: pointer;">
-                    <option value="0A">認識字母</option>
-                    <option value="1A" selected>1A 基礎級</option>
-                    <option value="1B">1B 初級</option>
-                    <option value="2A">2A 中初級</option>
-                    <option value="2B">2B 中級</option>
-                    <option value="3A">3A 中高級</option>
-                    <option value="3B">3B 高級</option>
-                    <option value="4A">4A 精通級</option>
-                </select>
+            
+            <!-- 🌟 新增：類別 (韓語/英語/日語) 與 程度 下拉選單 -->
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 10px; margin-bottom: 5px; background: #ffffff; padding: 12px; border-radius: 16px; border: 2px solid #e5e7eb;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label for="select-category" style="font-weight: bold; color: #4b5563;"><i class="fa-solid fa-language"></i> 學習類別：</label>
+                    <select id="select-category" style="padding: 6px 12px; border-radius: 10px; border: 2px solid #e5e7eb; font-weight: bold; background: white; cursor: pointer;">
+                        <option value="korean" selected>韓語 (Korean)</option>
+                        <option value="english">英語 (English)</option>
+                        <option value="japanese">日語 (Japanese)</option>
+                    </select>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label for="select-level-course" style="font-weight: bold; color: #4b5563;"><i class="fa-solid fa-layer-group"></i> 課程程度：</label>
+                    <select id="select-level-course" style="padding: 6px 12px; border-radius: 10px; border: 2px solid #e5e7eb; font-weight: bold; background: white; cursor: pointer;">
+                        <option value="0A">認識字母</option>
+                        <option value="1A" selected>1A 基礎級</option>
+                        <option value="1B">1B 初級</option>
+                        <option value="2A">2A 中初級</option>
+                        <option value="2B">2B 中級</option>
+                        <option value="3A">3A 中高級</option>
+                        <option value="3B">3B 高級</option>
+                        <option value="4A">4A 精通級</option>
+                    </select>
+                </div>
             </div>
 
             <!-- 動態渲染單元區塊 -->
@@ -269,33 +277,31 @@
                 <h3 style="margin-top:0; color: #1f2937;"><i class="fa-solid fa-id-card" style="color: var(--duo-blue);"></i> 個人檔案</h3>
                 <p><strong>暱稱：</strong><span id="profile-nickname">學生</span></p>
                 <p><strong>帳號：</strong><span id="profile-email">email@example.com</span></p>
-                <p><strong>目前等級：</strong><span id="profile-level" style="color: var(--duo-blue); font-weight: bold;">1A</span> (XP: <span id="profile-xp" style="color: #10b981; font-weight: bold;">0</span>)</p>
+                <p><strong>目前等級：</strong><span id="profile-level" style="color: var(--duo-blue); font-weight: bold;">韓語 1A</span> (XP: <span id="profile-xp" style="color: #10b981; font-weight: bold;">0</span>)</p>
                 <p><strong>連續學習：</strong>🔥 <span id="profile-streak" style="color: #f59e0b; font-weight: bold;">0</span> 天</p>
                 
                 <hr style="border:0; border-top: 2px solid #f3f4f6; margin: 15px 0;">
                 <button id="btn-trigger-logout" class="btn-3d" style="width: 100%; padding: 10px; background: var(--duo-red); color: white; box-shadow: 0 4px 0 var(--duo-red-shadow);">登出系統</button>
             </div>
 
-            <!-- 排行榜 Tabs 頁籤 (好友榜 vs 總排行榜) -->
+            <!-- 排行榜 Tabs -->
             <div class="unit-card">
                 <h3 style="margin-top:0; color: #1f2937;"><i class="fa-solid fa-trophy" style="color: #f59e0b;"></i> 學習排行榜</h3>
                 
                 <div style="display: flex; gap: 8px; margin-bottom: 15px; background: #f3f4f6; padding: 4px; border-radius: 14px;">
                     <button class="tab-btn active" id="tab-leaderboard-friends">好友榜</button>
-                    <button class="tab-btn" id="tab-leaderboard-global">同程度總榜 (1A)</button>
+                    <button class="tab-btn" id="tab-leaderboard-global">同程度總榜</button>
                 </div>
 
-                <!-- 好友榜頁面 -->
                 <div id="content-rank-friends">
                     <p style="font-size: 0.85rem; color: #6b7280; text-align: center; padding: 10px 0;">
                         [好友榜] 尚未連結好友。<br>可顯示：破關數、最高連續學習天數、學習總時數。
                     </p>
                 </div>
 
-                <!-- 總排行榜頁面 -->
                 <div id="content-rank-global" class="hidden">
                     <p style="font-size: 0.85rem; color: #6b7280; text-align: center; padding: 10px 0;">
-                        [1A 總排行榜] 只顯示同程度學生競爭榜單。
+                        [同程度總排行榜] 只顯示相同語言與程度學生榜單。
                     </p>
                 </div>
             </div>
@@ -311,7 +317,7 @@
 
             <div class="header">
                 <div class="top-row">
-                    <span id="lbl-current-unit-title" style="font-weight:bold;">單元 1 - 階段 1</span>
+                    <span id="lbl-current-unit-title" style="font-weight:bold;">韓語 - 1A - 單元 1</span>
                 </div>
             </div>
 
