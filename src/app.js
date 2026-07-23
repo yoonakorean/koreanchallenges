@@ -127,7 +127,7 @@ function setupNavigationAndModals() {
         }
     });
 
-    // 🌟 4. 修復同程度總榜與好友榜 Tab 切換
+    // 🌟 Leaderboard Tab 切換
     const tabFriends = document.getElementById('tab-leaderboard-friends');
     const tabGlobal = document.getElementById('tab-leaderboard-global');
     const contentFriends = document.getElementById('content-rank-friends');
@@ -147,7 +147,7 @@ function setupNavigationAndModals() {
         contentFriends?.classList.add('hidden');
     });
 
-    // 🌟 4. 修復點擊修改暱稱按鈕
+    // 🌟 修改暱稱 Modal
     const modalEditNickname = document.getElementById('modal-edit-nickname');
     document.getElementById('btn-open-edit-nickname')?.addEventListener('click', () => {
         const lastChange = currentUserData?.lastNicknameChange;
@@ -184,7 +184,7 @@ function setupNavigationAndModals() {
         alert("暱稱修改成功！");
     });
 
-    // 🌟 4. 修復點擊修改密碼按鈕
+    // 🌟 修改密碼 Modal
     const modalChangePassword = document.getElementById('modal-change-password');
     document.getElementById('btn-open-change-password')?.addEventListener('click', () => {
         modalChangePassword?.classList.remove('hidden');
@@ -207,7 +207,7 @@ function setupNavigationAndModals() {
         }
     });
 
-    // 🌟 3. 新增好友彈窗事件
+    // 🌟 新增好友 Modal
     const modalAddFriend = document.getElementById('modal-add-friend');
     document.getElementById('btn-open-add-friend')?.addEventListener('click', () => {
         modalAddFriend?.classList.remove('hidden');
