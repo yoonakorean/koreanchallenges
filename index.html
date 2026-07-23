@@ -16,6 +16,70 @@
 
     <!-- Firebase 設定檔 -->
     <script src="js/firebase-config.js"></script>
+
+    <style>
+        /* 地圖頁面樣式 (Map View Style) */
+        .map-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            padding: 30px 15px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .unit-card {
+            width: 100%;
+            background: #ffffff;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .unit-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #f3f4f6;
+            padding-bottom: 8px;
+        }
+        .stages-path {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+        .stage-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary, #4f46e5);
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #3730a3;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .stage-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #3730a3;
+        }
+        /* 未解鎖暗色按鈕 */
+        .stage-btn.locked {
+            background: #9ca3af !important;
+            box-shadow: 0 6px 0 #6b7280 !important;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+    </style>
 </head>
 <body>
 
@@ -23,7 +87,7 @@
     <div class="modal" id="login-modal">
         <div class="modal-content">
             <h3><i class="fa-solid fa-cloud"></i> 歡迎來到韓語大冒險</h3>
-            <p style="font-size: 0.9rem; color:#6b7280; margin-bottom: 15px;">優娜韓語 每天陪你一起進步</p>
+            <p style="font-size: 0.9rem; color:#6b7280; margin-bottom: 15px;">優娜韓語 陪你一起持續進步</p>
             
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                 <button id="tab-login" style="flex:1; padding: 8px; font-weight: bold; border-bottom: 2px solid var(--primary); background: none; border-top:none; border-left:none; border-right:none; cursor:pointer;">立即登入</button>
@@ -33,15 +97,12 @@
             <input type="email" id="email-input" placeholder="電子信箱 (Email)" required />
             <input type="password" id="password-input" placeholder="密碼 (Password 六位數以上)" required />
             
-            <!-- 註冊延伸欄位 -->
             <div id="register-extended-fields" class="hidden">
                 <input type="text" id="realname-input" placeholder="真實姓名" />
                 <input type="date" id="birthday-input" placeholder="生日" />
-                <!-- 需求 2：修改顯示文字 -->
                 <input type="text" id="nickname-input" placeholder="顯示暱稱（不可修改）" required />
             </div>
 
-            <!-- 需求 1：重新排版記住我勾選框 (強制橫向、置於按鈕上方) -->
             <div style="display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin: 12px 0 6px 0; width: 100%; box-sizing: border-box;">
                 <input type="checkbox" id="chk-remember-me" style="width: auto; margin: 0; cursor: pointer;" />
                 <label for="chk-remember-me" style="font-size: 0.85rem; color: #4b5563; cursor: pointer; white-space: nowrap; user-select: none;">記住我的帳號與密碼</label>
@@ -53,62 +114,104 @@
         </div>
     </div>
 
-    <!-- 主學習畫面 -->
+    <!-- 主學習畫面應用容器 -->
     <div class="container hidden" id="main-app">
+        <!-- 頂部資訊列 -->
         <div class="user-meta-bar" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-                <span><i class="fa-solid fa-user"></i> <span id="lbl-username">學生</span></span>
-                <!-- 需求 3：新增登出鍵 -->
-                <button id="btn-logout" style="margin-left: 8px; padding: 2px 8px; font-size: 0.75rem; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">登出</button>
+                <!-- 點擊姓名切換至 Profile 頁面 (Step 2 實作) -->
+                <span id="btn-profile-trigger" style="cursor: pointer; text-decoration: underline;">
+                    <i class="fa-solid fa-user"></i> <span id="lbl-username">學生</span>
+                </span>
                 <span style="margin-left: 10px;">(🔥<span id="lbl-login-days">0</span>天)</span>
             </div>
             <span>🪙 XP: <span id="lbl-xp">0</span> | <span id="lbl-user-level">1A</span></span>
         </div>
 
-        <div class="header">
-            <div class="top-row">
-                <select id="unit-dropdown-selector" style="font-weight:bold; padding:6px 12px; border-radius:8px; border:2px solid #e5e7eb; background:#f3f4f6; cursor:pointer;">
-                    <option value="1">單元 1 (有/沒有)</option>
-                    <option value="2">單元 2 (數量詞)</option>
-                    <option value="3">單元 3 (請給我)</option>
-                </select>
-                <div class="stages-indicator">
-                    <span class="stage-dot" id="dot-s1" data-stage="1">階段 1</span>
-                    <span class="stage-dot" id="dot-s2" data-stage="2">階段 2</span>
-                    <span class="stage-dot" id="dot-s3" data-stage="3">階段 3</span>
+        <!-- 🌟 獨立頁面 1：多鄰國風格「學習地圖 (Map View)」 -->
+        <div id="map-view" class="map-container">
+            <!-- 單元 1 -->
+            <div class="unit-card">
+                <div class="unit-title"><i class="fa-solid fa-map-location-dot"></i> 單元 1：有 / 沒有</div>
+                <div class="stages-path">
+                    <!-- 第一關開放 -->
+                    <button class="stage-btn" data-unit="1" data-stage="1"><i class="fa-solid fa-star"></i> 階段 1</button>
+                    <!-- 後續關卡預設鎖定 -->
+                    <button class="stage-btn locked" data-unit="1" data-stage="2"><i class="fa-solid fa-lock"></i> 階段 2</button>
+                    <button class="stage-btn locked" data-unit="1" data-stage="3"><i class="fa-solid fa-lock"></i> 階段 3</button>
                 </div>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span id="lbl-mode-text" class="mode-badge mode-practice">練習模式</span>
-                <div class="hp-container hidden" id="hp-box"></div>
+
+            <!-- 單元 2 (可跳單元挑戰，第一關開放) -->
+            <div class="unit-card">
+                <div class="unit-title"><i class="fa-solid fa-map-location-dot"></i> 單元 2：數量詞</div>
+                <div class="stages-path">
+                    <button class="stage-btn" data-unit="2" data-stage="1"><i class="fa-solid fa-star"></i> 階段 1</button>
+                    <button class="stage-btn locked" data-unit="2" data-stage="2"><i class="fa-solid fa-lock"></i> 階段 2</button>
+                    <button class="stage-btn locked" data-unit="2" data-stage="3"><i class="fa-solid fa-lock"></i> 階段 3</button>
+                </div>
+            </div>
+
+            <!-- 單元 3 (第一關開放) -->
+            <div class="unit-card">
+                <div class="unit-title"><i class="fa-solid fa-map-location-dot"></i> 單元 3：請給我</div>
+                <div class="stages-path">
+                    <button class="stage-btn" data-unit="3" data-stage="1"><i class="fa-solid fa-star"></i> 階段 1</button>
+                    <button class="stage-btn locked" data-unit="3" data-stage="2"><i class="fa-solid fa-lock"></i> 階段 2</button>
+                    <button class="stage-btn locked" data-unit="3" data-stage="3"><i class="fa-solid fa-lock"></i> 階段 3</button>
+                </div>
             </div>
         </div>
 
-        <div class="progress-bar-container">
-            <div class="progress-bar" id="main-progress"></div>
-        </div>
-
-        <div class="card-content">
-            <div class="target-display" id="lbl-target-text">載入中...</div>
-            
-            <div class="puzzle-zone hidden" id="puzzle-selected-zone"></div>
-            <div class="blocks-pool hidden" id="puzzle-pool-zone"></div>
-
-            <button class="hint-btn-trigger hidden" id="btn-hint-toggle"><i class="fa-solid fa-lightbulb"></i> 點選提示卡</button>
-            <div class="hint-box hidden" id="hint-text-box"></div>
-
-            <div class="options-grid hidden" id="quiz-options-container"></div>
-            
-            <div class="status-msg-container">
-                <div class="status-msg" id="lbl-status-text"></div>
+        <!-- 🌟 獨立頁面 2：答題畫面 (Game View, 預設隱藏) -->
+        <div id="game-view" class="hidden">
+            <div style="margin-bottom: 10px;">
+                <button id="btn-back-to-map" class="base-btn btn-secondary" style="padding: 4px 10px; font-size: 0.85rem;">
+                    <i class="fa-solid fa-arrow-left"></i> 返回地圖
+                </button>
             </div>
-        </div>
 
-        <div class="btn-action-row">
-            <button class="base-btn btn-secondary" id="btn-tts"><i class="fa-solid fa-volume-high"></i> 播放音檔</button>
-            <button class="base-btn btn-danger hidden" id="btn-pause-mic"><i class="fa-solid fa-pause"></i> 暫停錄音</button>
-            <button class="base-btn btn-secondary hidden" id="btn-play-correct"><i class="fa-solid fa-circle-play"></i> 播放正確音檔</button>
-            <button class="base-btn btn-success hidden" id="btn-continue">繼續 <i class="fa-solid fa-arrow-right"></i></button>
+            <div class="header">
+                <div class="top-row">
+                    <span id="lbl-current-unit-title" style="font-weight:bold;">單元 1 - 階段 1</span>
+                    <div class="stages-indicator">
+                        <span class="stage-dot active" id="dot-s1">階段 1</span>
+                        <span class="stage-dot" id="dot-s2">階段 2</span>
+                        <span class="stage-dot" id="dot-s3">階段 3</span>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span id="lbl-mode-text" class="mode-badge mode-practice">練習模式</span>
+                    <div class="hp-container hidden" id="hp-box"></div>
+                </div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="main-progress"></div>
+            </div>
+
+            <div class="card-content">
+                <div class="target-display" id="lbl-target-text">準備載入題目...</div>
+                
+                <div class="puzzle-zone hidden" id="puzzle-selected-zone"></div>
+                <div class="blocks-pool hidden" id="puzzle-pool-zone"></div>
+
+                <button class="hint-btn-trigger hidden" id="btn-hint-toggle"><i class="fa-solid fa-lightbulb"></i> 點選提示卡</button>
+                <div class="hint-box hidden" id="hint-text-box"></div>
+
+                <div class="options-grid hidden" id="quiz-options-container"></div>
+                
+                <div class="status-msg-container">
+                    <div class="status-msg" id="lbl-status-text"></div>
+                </div>
+            </div>
+
+            <div class="btn-action-row">
+                <button class="base-btn btn-secondary" id="btn-tts"><i class="fa-solid fa-volume-high"></i> 播放音檔</button>
+                <button class="base-btn btn-danger hidden" id="btn-pause-mic"><i class="fa-solid fa-pause"></i> 暫停錄音</button>
+                <button class="base-btn btn-secondary hidden" id="btn-play-correct"><i class="fa-solid fa-circle-play"></i> 播放正確音檔</button>
+                <button class="base-btn btn-success hidden" id="btn-continue">繼續 <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
         </div>
     </div>
 
