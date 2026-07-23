@@ -7,6 +7,10 @@ let currentSelectedLevel = '1A';
 let currentSelectedUnit = 1;
 let currentUserData = null;
 
+// 月曆當前檢視年月 (預設目前時間 2026 年 7 月)
+let viewYear = 2026;
+let viewMonth = 6; // 月份從 0 開始，6 表示 7 月
+
 const MULTI_LANG_COURSES = {
     'korean': {
         '0A': [{ id: 1, title: '單元 1：母音 기초', requiredWords: [] }],
@@ -40,16 +44,17 @@ function checkAndUpdateStreak(userData) {
     return { streak, lastLoginDate: today, loginHistory };
 }
 
-// 🗓️ 動態繪製月曆
-function renderStreakCalendar(loginHistory = []) {
+// 🗓️ 動態繪製可切換月份的月曆
+function renderStreakCalendar(loginHistory = [], year = viewYear, month = viewMonth) {
     const container = document.getElementById('calendar-days-container');
+    const monthTitle = document.getElementById('lbl-calendar-month-title');
     if (!container) return;
 
-    container.innerHTML = '';
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
+    if (monthTitle) {
+        monthTitle.innerText = `${year}年 ${month + 1}月`;
+    }
 
+    container.innerHTML = '';
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -145,9 +150,6 @@ function updateUIProfile(data) {
     // 打卡儀表板
     document.getElementById('dash-streak-days').innerText = data.streak || 1;
     document.getElementById('dash-focus-hours').innerText = (data.focusHours || 0.0).toFixed(1);
-
-    const levelSelect = document.getElementById('select-level-course');
-    if (levelSelect) levelSelect.value = data.allowedLevel || '1A';
 }
 
 function setupNavigationAndModals() {
@@ -159,10 +161,14 @@ function setupNavigationAndModals() {
     const modalWarmupAsk = document.getElementById('modal-warmup-ask');
     const modalStreakDashboard = document.getElementById('modal-streak-dashboard');
     const modalLogoutConfirm = document.getElementById('modal-logout-confirm');
+    const modalLevelSelect = document.getElementById('modal-select-initial-level');
 
-    // 🌟 打卡儀表板點擊觸發
+    // 🌟 打卡儀表板觸發與跨月切換
     document.getElementById('btn-streak-trigger')?.addEventListener('click', () => {
-        renderStreakCalendar(currentUserData?.loginHistory || []);
+        const now = new Date();
+        viewYear = now.getFullYear();
+        viewMonth = now.getMonth();
+        renderStreakCalendar(currentUserData?.loginHistory || [], viewYear, viewMonth);
         modalStreakDashboard?.classList.remove('hidden');
     });
 
@@ -170,22 +176,52 @@ function setupNavigationAndModals() {
         modalStreakDashboard?.classList.add('hidden');
     });
 
-    // 🔒 程度切換檢查
-    document.getElementById('select-level-course')?.addEventListener('change', (e) => {
-        const selected = e.target.value;
+    document.getElementById('btn-cal-prev')?.addEventListener('click', () => {
+        viewMonth--;
+        if (viewMonth < 0) {
+            viewMonth = 11;
+            viewYear--;
+        }
+        renderStreakCalendar(currentUserData?.loginHistory || [], viewYear, viewMonth);
+    });
+
+    document.getElementById('btn-cal-next')?.addEventListener('click', () => {
+        viewMonth++;
+        if (viewMonth > 11) {
+            viewMonth = 0;
+            viewYear++;
+        }
+        renderStreakCalendar(currentUserData?.loginHistory || [], viewYear, viewMonth);
+    });
+
+    // 🌟 點擊頂部「程度」選擇 Modal
+    document.getElementById('btn-level-trigger')?.addEventListener('click', () => {
+        const select = document.getElementById('initial-level-select');
+        if (select) select.value = currentSelectedLevel;
+        modalLevelSelect?.classList.remove('hidden');
+    });
+
+    document.getElementById('btn-close-level-modal')?.addEventListener('click', () => {
+        modalLevelSelect?.classList.add('hidden');
+    });
+
+    document.getElementById('btn-confirm-initial-level')?.addEventListener('click', async () => {
+        const selected = document.getElementById('initial-level-select').value;
         const allowed = currentUserData?.allowedLevel || '1A';
 
         if (selected > allowed) {
+            modalLevelSelect?.classList.add('hidden');
             document.getElementById('lbl-locked-msg').innerText = `您的帳號目前權限為 ${allowed}，無法存取 ${selected} 程度。如需開通請聯繫後台管理員！`;
             modalLocked?.classList.remove('hidden');
-            e.target.value = currentSelectedLevel;
         } else {
             currentSelectedLevel = selected;
             renderMapUnits(currentCategory, currentSelectedLevel);
+            document.getElementById('lbl-user-level').innerText = selected;
+            modalLevelSelect?.classList.add('hidden');
         }
     });
 
-    // 🌟 Leaderboard Tab 切換
+    // Leaderboard Tab 切換
     const tabFriends = document.getElementById('tab-leaderboard-friends');
     const tabGlobal = document.getElementById('tab-leaderboard-global');
     const contentFriends = document.getElementById('content-rank-friends');
@@ -205,7 +241,7 @@ function setupNavigationAndModals() {
         contentFriends?.classList.add('hidden');
     });
 
-    // 🌟 修改暱稱 Modal
+    // 修改暱稱 Modal
     const modalEditNickname = document.getElementById('modal-edit-nickname');
     document.getElementById('btn-open-edit-nickname')?.addEventListener('click', () => {
         const lastChange = currentUserData?.lastNicknameChange;
@@ -242,7 +278,7 @@ function setupNavigationAndModals() {
         alert("暱稱修改成功！");
     });
 
-    // 🌟 修改密碼 Modal
+    // 修改密碼 Modal
     const modalChangePassword = document.getElementById('modal-change-password');
     document.getElementById('btn-open-change-password')?.addEventListener('click', () => {
         modalChangePassword?.classList.remove('hidden');
@@ -265,7 +301,7 @@ function setupNavigationAndModals() {
         }
     });
 
-    // 🌟 新增好友 Modal
+    // 新增好友 Modal
     const modalAddFriend = document.getElementById('modal-add-friend');
     document.getElementById('btn-open-add-friend')?.addEventListener('click', () => {
         modalAddFriend?.classList.remove('hidden');
@@ -298,7 +334,7 @@ function setupNavigationAndModals() {
         modalLocked?.classList.add('hidden');
     });
 
-    // 🌟 課前暖身詢問關閉與跳轉按鈕
+    // 課前暖身關閉與按鈕
     document.getElementById('btn-close-warmup-ask')?.addEventListener('click', () => {
         modalWarmupAsk?.classList.add('hidden');
     });
