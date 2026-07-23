@@ -195,7 +195,7 @@ function setupNavigationAndModals() {
         renderStreakCalendar(currentUserData?.loginHistory || [], viewYear, viewMonth);
     };
 
-    // 🌟 點擊頂部「程度」觸發 Modal 選擇
+    // 點擊頂部「程度」觸發 Modal 選擇
     const levelTrigger = document.getElementById('btn-level-trigger');
     if (levelTrigger) {
         levelTrigger.onclick = () => {
@@ -225,42 +225,42 @@ function setupNavigationAndModals() {
         }
     };
 
-    // 🌟 頂部點選個人資料，開啟視圖並預設顯示排行榜
+    // 🌟 點擊頂部個人資料，切換至個人主頁 (預設顯示學習排行榜)
     const btnProfileTrigger = document.getElementById('btn-profile-trigger');
     const subPageLeaderboard = document.getElementById('sub-page-leaderboard');
     const subPageProfile = document.getElementById('sub-page-profile');
     const btnViewLeaderboard = document.getElementById('btn-view-leaderboard');
     const btnViewProfile = document.getElementById('btn-view-profile');
 
+    function switchSubPage(target) {
+        if (target === 'leaderboard') {
+            btnViewLeaderboard?.classList.add('active');
+            btnViewProfile?.classList.remove('active');
+            subPageLeaderboard?.classList.remove('hidden');
+            subPageProfile?.classList.add('hidden');
+        } else if (target === 'profile') {
+            btnViewProfile?.classList.add('active');
+            btnViewLeaderboard?.classList.remove('active');
+            subPageProfile?.classList.remove('hidden');
+            subPageLeaderboard?.classList.add('hidden');
+        }
+    }
+
     if (btnProfileTrigger) {
         btnProfileTrigger.onclick = () => {
             mapView?.classList.add('hidden');
             gameView?.classList.add('hidden');
             profileView?.classList.remove('hidden');
-
-            // 預設切換至排行榜分頁
-            btnViewLeaderboard?.classList.add('active');
-            btnViewProfile?.classList.remove('active');
-            subPageLeaderboard?.classList.remove('hidden');
-            subPageProfile?.classList.add('hidden');
+            switchSubPage('leaderboard'); // 點擊頭像進入時預設顯示排行榜
         };
     }
 
-    // [學習排行榜] / [個人檔案] 切換頁籤按鈕
-    if (btnViewLeaderboard && btnViewProfile) {
-        btnViewLeaderboard.onclick = () => {
-            btnViewLeaderboard.classList.add('active');
-            btnViewProfile.classList.remove('active');
-            subPageLeaderboard?.classList.remove('hidden');
-            subPageProfile?.classList.add('hidden');
-        };
-
-        btnViewProfile.onclick = () => {
-            btnViewProfile.classList.add('active');
-            btnViewLeaderboard.classList.remove('active');
-            subPageProfile?.classList.remove('hidden');
-            subPageLeaderboard?.classList.add('hidden');
-        };
+    // 🌟 修復點擊 [學習排行榜] / [個人檔案] 按鈕無反應
+    if (btnViewLeaderboard) {
+        btnViewLeaderboard.onclick = () => switchSubPage('leaderboard');
+    }
+    if (btnViewProfile) {
+        btnViewProfile.onclick = () => switchSubPage('profile');
     }
 
     // Leaderboard 內部 Friends / Global Tab 切換
