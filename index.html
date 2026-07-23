@@ -26,7 +26,7 @@
             --duo-red: #ff4b4b;
             --duo-red-shadow: #ea2b2b;
             --duo-gold: #f59e0b;
-            --duo-cyan: #a5b4fc; /* 藍綠色 */
+            --duo-lightning: #a5b4fc; /* 閃電專用紫藍色 */
             --duo-fire-red: #ef4444; /* 鮮豔紅 */
         }
 
@@ -35,6 +35,7 @@
             padding: 0;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: #f9fafb;
+            -webkit-tap-highlight-color: transparent; /* 消除手機點擊藍色高亮框 */
         }
 
         .app-container {
@@ -46,19 +47,23 @@
             background: #ffffff;
             display: flex;
             flex-direction: column;
+            position: relative;
         }
 
-        /* 🌟 1. 頂部資訊列：重新配置順序與色彩 */
+        /* 🌟 頂部資訊列：提升 z-index 與觸控體驗 */
         .user-meta-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 16px;
+            padding: 12px 14px;
             background: #ffffff;
             border-bottom: 2px solid #e5e7eb;
             font-size: 0.88rem;
             white-space: nowrap;
+            position: relative;
+            z-index: 100; /* 高於下方內容區 */
         }
+
         .user-meta-item {
             display: inline-flex;
             align-items: center;
@@ -66,9 +71,17 @@
             font-weight: bold;
             color: #374151;
             cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 10px;
+            user-select: none;
+            touch-action: manipulation;
         }
 
-        /* 🌟 2. 統一按鈕與彈窗留白優化 */
+        .user-meta-item:active {
+            background-color: #f3f4f6;
+        }
+
+        /* 🌟 按鈕與通用元件 */
         .btn-3d, .stage-btn-3d, .tab-btn {
             font-size: 0.9rem !important;
             font-weight: bold;
@@ -77,6 +90,7 @@
             cursor: pointer;
             transition: all 0.1s ease;
             user-select: none;
+            touch-action: manipulation;
         }
         
         .btn-3d-primary {
@@ -171,13 +185,14 @@
             font-size: 0.95rem;
         }
 
-        /* 🌟 彈窗左右留白優化 */
+        /* 🌟 彈窗高層級與留白優化 */
         .custom-modal {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             display: flex; justify-content: center; align-items: center;
-            z-index: 1000;
+            z-index: 9999; /* 確保最高層級，手機順暢彈出 */
+            touch-action: manipulation;
         }
         .custom-modal-card {
             background: white; border-radius: 24px; padding: 24px 20px;
@@ -192,12 +207,10 @@
             top: 14px;
             left: 16px;
             color: var(--duo-red);
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             cursor: pointer;
-            transition: transform 0.1s;
-        }
-        .close-icon-red:active {
-            transform: scale(0.9);
+            padding: 6px;
+            z-index: 10000;
         }
 
         .tab-btn {
@@ -340,7 +353,7 @@
         </div>
     </div>
 
-    <!-- 🌟 新增：點擊「連續登入天數」儀表板頁面 Modal -->
+    <!-- 點擊「連續登入天數」儀表板頁面 Modal -->
     <div id="modal-streak-dashboard" class="custom-modal hidden">
         <div class="custom-modal-card">
             <i class="fa-solid fa-xmark close-icon-red" id="btn-close-streak-modal"></i>
@@ -378,7 +391,7 @@
         </div>
     </div>
 
-    <!-- 🌟 課前暖身詢問 Modal（左上角新增紅色✖️關閉鍵） -->
+    <!-- 課前暖身詢問 Modal -->
     <div id="modal-warmup-ask" class="custom-modal hidden">
         <div class="custom-modal-card">
             <i class="fa-solid fa-xmark close-icon-red" id="btn-close-warmup-ask"></i>
@@ -406,15 +419,15 @@
     <!-- 主應用容器 -->
     <div class="app-container hidden" id="main-app">
         
-        <!-- 🌟 1. 頂部資訊列：調整順序為 [個人資料, 連續登入, 星星, 閃電, 程度] 與色彩 -->
+        <!-- 🌟 頂部資訊列：閃電顏色為 #a5b4fc -->
         <div class="user-meta-bar">
-            <!-- 1. 個人資料 (位置不動) -->
+            <!-- 1. 個人資料 -->
             <div class="user-meta-item" id="btn-profile-trigger">
                 <i class="fa-solid fa-user" style="color: var(--duo-blue); font-size: 1.05rem;"></i>
                 <span id="lbl-username">學生</span>
             </div>
 
-            <!-- 2. 連續登入天數 (鮮艷紅) -->
+            <!-- 2. 連續登入天數 (鮮豔紅) -->
             <div class="user-meta-item" id="btn-streak-trigger">
                 <i class="fa-solid fa-fire" style="color: var(--duo-fire-red); font-size: 1.05rem;"></i>
                 <span id="lbl-login-days">1</span>天
@@ -426,9 +439,9 @@
                 <span id="lbl-xp">0</span>
             </div>
 
-            <!-- 4. 閃電 / 能量 (藍綠色) -->
+            <!-- 4. 閃電 / 能量 (#a5b4fc 紫藍色) -->
             <div class="user-meta-item">
-                <i class="fa-solid fa-bolt-lightning" style="color: var(--duo-cyan); font-size: 1.05rem;"></i>
+                <i class="fa-solid fa-bolt-lightning" style="color: var(--duo-lightning); font-size: 1.05rem;"></i>
                 <span id="lbl-energy">100</span>
             </div>
 
@@ -493,7 +506,7 @@
                     </div>
                     <div class="profile-row">
                         <span style="color: #6b7280;">剩餘能量：</span>
-                        <span style="color: var(--duo-cyan); font-weight: bold;"><i class="fa-solid fa-bolt-lightning"></i> <span id="profile-energy">100</span></span>
+                        <span style="color: var(--duo-lightning); font-weight: bold;"><i class="fa-solid fa-bolt-lightning"></i> <span id="profile-energy">100</span></span>
                     </div>
                     <div class="profile-row">
                         <span style="color: #6b7280;">累積經驗值 (XP)：</span>
