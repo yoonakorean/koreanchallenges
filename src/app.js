@@ -22,6 +22,11 @@ function checkAndUpdateStreak(userData) {
     const today = new Date().toISOString().split('T')[0];
     let streak = userData.streak || 1;
     const lastLogin = userData.lastLoginDate || '';
+    let loginHistory = userData.loginHistory || [];
+
+    if (!loginHistory.includes(today)) {
+        loginHistory.push(today);
+    }
 
     if (lastLogin) {
         const lastDate = new Date(lastLogin);
@@ -32,7 +37,45 @@ function checkAndUpdateStreak(userData) {
         else if (diffDays > 1) streak = 1;
     }
 
-    return { streak, lastLoginDate: today };
+    return { streak, lastLoginDate: today, loginHistory };
+}
+
+// 🗓️ 動態繪製月曆
+function renderStreakCalendar(loginHistory = []) {
+    const container = document.getElementById('calendar-days-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // 補齊月前空白天數
+    for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'calendar-day';
+        container.appendChild(emptyCell);
+    }
+
+    // 繪製日期
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayCell = document.createElement('div');
+        dayCell.className = 'calendar-day';
+        dayCell.innerText = day;
+
+        const monthStr = String(month + 1).padStart(2, '0');
+        const dayStr = String(day).padStart(2, '0');
+        const dateKey = `${year}-${monthStr}-${dayStr}`;
+
+        if (loginHistory.includes(dateKey)) {
+            dayCell.classList.add('active-login');
+        }
+
+        container.appendChild(dayCell);
+    }
 }
 
 function renderMapUnits(category, level) {
@@ -99,6 +142,10 @@ function updateUIProfile(data) {
     document.getElementById('profile-xp').innerText = data.xp || 0;
     document.getElementById('profile-streak').innerText = data.streak || 1;
 
+    // 打卡儀表板
+    document.getElementById('dash-streak-days').innerText = data.streak || 1;
+    document.getElementById('dash-focus-hours').innerText = (data.focusHours || 0.0).toFixed(1);
+
     const levelSelect = document.getElementById('select-level-course');
     if (levelSelect) levelSelect.value = data.allowedLevel || '1A';
 }
@@ -110,7 +157,18 @@ function setupNavigationAndModals() {
 
     const modalLocked = document.getElementById('modal-locked');
     const modalWarmupAsk = document.getElementById('modal-warmup-ask');
+    const modalStreakDashboard = document.getElementById('modal-streak-dashboard');
     const modalLogoutConfirm = document.getElementById('modal-logout-confirm');
+
+    // 🌟 打卡儀表板點擊觸發
+    document.getElementById('btn-streak-trigger')?.addEventListener('click', () => {
+        renderStreakCalendar(currentUserData?.loginHistory || []);
+        modalStreakDashboard?.classList.remove('hidden');
+    });
+
+    document.getElementById('btn-close-streak-modal')?.addEventListener('click', () => {
+        modalStreakDashboard?.classList.add('hidden');
+    });
 
     // 🔒 程度切換檢查
     document.getElementById('select-level-course')?.addEventListener('change', (e) => {
@@ -240,6 +298,11 @@ function setupNavigationAndModals() {
         modalLocked?.classList.add('hidden');
     });
 
+    // 🌟 課前暖身詢問關閉與跳轉按鈕
+    document.getElementById('btn-close-warmup-ask')?.addEventListener('click', () => {
+        modalWarmupAsk?.classList.add('hidden');
+    });
+
     document.getElementById('btn-warmup-yes')?.addEventListener('click', () => {
         modalWarmupAsk?.classList.add('hidden');
         alert("即將進入 Step 2 課前暖身頁面！");
@@ -343,6 +406,7 @@ function setupAuthEventListeners() {
                         allowedLevel: selectedLevel,
                         xp: 0,
                         energy: 100,
+                        focusHours: 0.0,
                         expireAt: '2026-12-31',
                         ...streakData
                     };
