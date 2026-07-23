@@ -30,18 +30,59 @@ function handleRememberMe(email, password) {
     }
 }
 
+/**
+ * 🗺️ 地圖切換與關卡控制邏輯 (Step 1)
+ */
+function setupMapEventListeners() {
+    const mapView = document.getElementById('map-view');
+    const gameView = document.getElementById('game-view');
+    const btnBackToMap = document.getElementById('btn-back-to-map');
+
+    // 1. 監聽地圖上的所有關卡按鈕
+    document.querySelectorAll('.stage-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const target = e.currentTarget;
+            const unit = target.getAttribute('data-unit');
+            const stage = target.getAttribute('data-stage');
+            const isLocked = target.classList.contains('locked');
+
+            if (isLocked) {
+                // 點擊未解鎖關卡時彈出提示
+                alert(`🔒 關卡鎖定中：需先通過單元 ${unit} 的階段 ${stage - 1} 才能挑戰喔！`);
+            } else {
+                // 進入開放關卡，切換至答題畫面
+                console.log(`[Map Engine] 進入 單元 ${unit} - 階段 ${stage}`);
+                
+                // 更新答題頁面標題
+                const lblUnitTitle = document.getElementById('lbl-current-unit-title');
+                if (lblUnitTitle) lblUnitTitle.innerText = `單元 ${unit} - 階段 ${stage}`;
+
+                // 畫面滑動切換
+                mapView?.classList.add('hidden');
+                gameView?.classList.remove('hidden');
+
+                // [預留 Step 3/4]：此處將觸發課前暖身 Modal 或直奔 Stage 1 練習模式
+            }
+        });
+    });
+
+    // 2. 點擊「返回地圖」按鈕
+    btnBackToMap?.addEventListener('click', () => {
+        gameView?.classList.add('hidden');
+        mapView?.classList.remove('hidden');
+    });
+}
+
 function setupAuthEventListeners() {
     const tabLogin = document.getElementById('tab-login');
     const tabRegister = document.getElementById('tab-register');
     const registerFields = document.getElementById('register-extended-fields');
     const btnSubmit = document.getElementById('btn-auth-submit');
-    const btnLogout = document.getElementById('btn-logout');
     const loginModal = document.getElementById('login-modal');
     const mainApp = document.getElementById('main-app');
 
     loadRememberedCredentials();
 
-    // 1. 切換至「登入」頁籤
     tabLogin?.addEventListener('click', () => {
         authMode = 'login';
         tabLogin.style.fontWeight = 'bold';
@@ -51,7 +92,6 @@ function setupAuthEventListeners() {
         registerFields?.classList.add('hidden');
     });
 
-    // 2. 切換至「註冊」頁籤
     tabRegister?.addEventListener('click', () => {
         authMode = 'register';
         tabRegister.style.fontWeight = 'bold';
@@ -61,7 +101,6 @@ function setupAuthEventListeners() {
         registerFields?.classList.remove('hidden');
     });
 
-    // 3. 送出登入 / 註冊
     btnSubmit?.addEventListener('click', async () => {
         const email = document.getElementById('email-input')?.value.trim();
         const password = document.getElementById('password-input')?.value.trim();
@@ -91,14 +130,6 @@ function setupAuthEventListeners() {
         }
     });
 
-    // 4. 需求 3：點擊「登出」按鈕
-    btnLogout?.addEventListener('click', async () => {
-        if (confirm("確定要登出系統嗎？")) {
-            await AuthService.logout();
-        }
-    });
-
-    // 5. 監聽 Firebase Auth 登入狀態變更
     AuthService.onAuthStateChanged(async (user) => {
         if (user) {
             loginModal?.classList.add('hidden');
@@ -127,6 +158,7 @@ export function initApp() {
     console.log("🚀 遊戲系統初始化中...");
     registerGameStages();
     setupAuthEventListeners();
+    setupMapEventListeners();
 }
 
 initApp();
