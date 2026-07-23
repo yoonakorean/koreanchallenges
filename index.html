@@ -185,7 +185,7 @@
             font-size: 0.95rem;
         }
 
-        /* 🌟 Modal 彈窗與優化後的圓圈關閉 Icon */
+        /* 🌟 Modal 彈窗與圓圈關閉 Icon */
         .custom-modal {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -202,7 +202,6 @@
             box-sizing: border-box;
         }
 
-        /* 🌟 改為圓框低調風格的關閉按鈕 */
         .close-icon-circle {
             position: absolute;
             top: 14px;
@@ -234,6 +233,24 @@
             background: var(--duo-blue); color: white;
             box-shadow: 0 3px 0 var(--duo-blue-shadow);
         }
+
+        /* 頂部導覽專用小頁籤 */
+        .nav-tab-btn {
+            padding: 6px 12px;
+            border: 2px solid #e5e7eb;
+            background: #f9fafb;
+            color: #6b7280;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .nav-tab-btn.active {
+            background: var(--duo-blue);
+            color: white;
+            border-color: var(--duo-blue-shadow);
+        }
+
         .hidden { display: none !important; }
 
         input, select {
@@ -392,7 +409,7 @@
         </div>
     </div>
 
-    <!-- 🌟 點擊「連續登入天數」儀表板頁面 Modal（包含月份切換與圓圈關閉 Icon） -->
+    <!-- 連續登入天數儀表板 Modal -->
     <div id="modal-streak-dashboard" class="custom-modal hidden">
         <div class="custom-modal-card">
             <div class="close-icon-circle" id="btn-close-streak-modal"><i class="fa-solid fa-xmark"></i></div>
@@ -410,7 +427,7 @@
                 </div>
             </div>
 
-            <!-- 🌟 新增月份控制標題 -->
+            <!-- 月份控制標題 -->
             <div class="calendar-header-ctrl">
                 <div><i class="fa-regular fa-calendar-days" style="color: var(--duo-gold);"></i> 簽到紀錄</div>
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -423,7 +440,6 @@
             <!-- 月曆表 -->
             <div class="calendar-grid">
                 <div class="calendar-day-header">日</div><div class="calendar-day-header">一</div><div class="calendar-day-header">二</div><div class="calendar-day-header">三</div><div class="calendar-day-header">四</div><div class="calendar-day-header">五</div><div class="calendar-day-header">六</div>
-                <!-- 日期由 JS 自動繪製 -->
                 <div id="calendar-days-container" style="display: contents;"></div>
             </div>
         </div>
@@ -467,7 +483,7 @@
     <!-- 主應用容器 -->
     <div class="app-container hidden" id="main-app">
         
-        <!-- 🌟 頂部資訊列：點擊程度可直接觸發切換 -->
+        <!-- 頂部資訊列 -->
         <div class="user-meta-bar">
             <!-- 1. 個人資料 -->
             <div class="user-meta-item" id="btn-profile-trigger">
@@ -493,7 +509,7 @@
                 <span id="lbl-energy">100</span>
             </div>
 
-            <!-- 5. 程度 (改為可點擊選擇) -->
+            <!-- 5. 程度 (點擊觸發選擇 Modal) -->
             <div class="user-meta-item" id="btn-level-trigger">
                 <span id="lbl-user-level" style="color: var(--duo-blue);">1A</span>
                 <i class="fa-solid fa-caret-down" style="font-size: 0.75rem; color: #9ca3af;"></i>
@@ -502,21 +518,53 @@
 
         <!-- 視圖 1：學習地圖 (Map View) -->
         <div id="map-view" class="map-container">
-            <!-- 🌟 舊有選單已移除，保留原數據對應結構 -->
             <div id="units-map-list" style="width: 100%; display: flex; flex-direction: column; gap: 16px;">
                 <!-- 由 JS 動態生成單元 -->
             </div>
         </div>
 
-        <!-- 視圖 2：個人主頁 (Profile View) -->
+        <!-- 視圖 2：右上角個人分頁 (Profile / Leaderboard View) -->
         <div id="profile-view" class="hidden" style="padding: 15px; width: 100%; box-sizing: border-box;">
-            <div style="margin-bottom: 12px;">
+            
+            <!-- 🌟 頂部導覽區：[返回地圖] 與分頁按鈕 [學習排行榜] / [個人檔案] 同排 -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <button id="btn-profile-back-map" class="btn-3d btn-3d-secondary" style="padding: 6px 14px;">
                     <i class="fa-solid fa-arrow-left"></i> 返回地圖
                 </button>
+
+                <div style="display: flex; gap: 6px;">
+                    <button class="nav-tab-btn active" id="btn-view-leaderboard">
+                        <i class="fa-solid fa-trophy"></i> 排行榜
+                    </button>
+                    <button class="nav-tab-btn" id="btn-view-profile">
+                        <i class="fa-solid fa-id-card"></i> 個人檔案
+                    </button>
+                </div>
             </div>
 
-            <div class="unit-card" style="margin-bottom: 16px;">
+            <!-- 分頁區 1：學習排行榜 (預設顯示) -->
+            <div id="sub-page-leaderboard" class="unit-card">
+                <h3 style="margin-top:0; color: #1f2937;"><i class="fa-solid fa-trophy" style="color: var(--duo-gold);"></i> 學習排行榜</h3>
+                
+                <div style="display: flex; gap: 8px; margin-bottom: 12px; background: #f3f4f6; padding: 4px; border-radius: 14px;">
+                    <button class="tab-btn active" id="tab-leaderboard-friends">好友榜</button>
+                    <button class="tab-btn" id="tab-leaderboard-global">同程度總榜</button>
+                </div>
+
+                <div id="content-rank-friends" style="padding: 10px 0; text-align: center;">
+                    <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 12px;">[好友榜] 尚未連結好友</p>
+                    <button id="btn-open-add-friend" class="btn-3d btn-3d-secondary" style="padding: 8px 16px;">
+                        <i class="fa-solid fa-user-plus"></i> 新增好友
+                    </button>
+                </div>
+
+                <div id="content-rank-global" class="hidden" style="padding: 15px 0; text-align: center;">
+                    <p style="font-size: 0.9rem; color: #6b7280; margin: 0;">🏆 1A 程度排行榜連線中...</p>
+                </div>
+            </div>
+
+            <!-- 分頁區 2：個人檔案資訊 (預設隱藏) -->
+            <div id="sub-page-profile" class="unit-card hidden">
                 <h3 style="margin-top:0; color: #1f2937; border-bottom: 2px solid #f3f4f6; padding-bottom: 8px;">
                     <i class="fa-solid fa-id-card" style="color: var(--duo-blue);"></i> 個人檔案
                 </h3>
@@ -564,26 +612,6 @@
                 </div>
             </div>
 
-            <!-- 排行榜 Tabs -->
-            <div class="unit-card">
-                <h3 style="margin-top:0; color: #1f2937;"><i class="fa-solid fa-trophy" style="color: var(--duo-gold);"></i> 學習排行榜</h3>
-                
-                <div style="display: flex; gap: 8px; margin-bottom: 12px; background: #f3f4f6; padding: 4px; border-radius: 14px;">
-                    <button class="tab-btn active" id="tab-leaderboard-friends">好友榜</button>
-                    <button class="tab-btn" id="tab-leaderboard-global">同程度總榜</button>
-                </div>
-
-                <div id="content-rank-friends" style="padding: 10px 0; text-align: center;">
-                    <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 12px;">[好友榜] 尚未連結好友</p>
-                    <button id="btn-open-add-friend" class="btn-3d btn-3d-secondary" style="padding: 8px 16px;">
-                        <i class="fa-solid fa-user-plus"></i> 新增好友
-                    </button>
-                </div>
-
-                <div id="content-rank-global" class="hidden" style="padding: 15px 0; text-align: center;">
-                    <p style="font-size: 0.9rem; color: #6b7280; margin: 0;">🏆 1A 程度排行榜連線中...</p>
-                </div>
-            </div>
         </div>
 
         <!-- 視圖 3：答題畫面 (Game View) -->
