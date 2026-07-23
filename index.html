@@ -82,7 +82,7 @@
             background-color: #f3f4f6;
         }
 
-        /* 紅點通知印記 */
+        /* 通知紅點標記 */
         .notification-badge {
             position: absolute;
             top: 2px;
@@ -90,8 +90,8 @@
             width: 10px;
             height: 10px;
             background-color: var(--duo-red);
-            border: 2px solid white;
             border-radius: 50%;
+            border: 2px solid white;
         }
 
         /* 通用按鈕樣式 */
@@ -247,7 +247,6 @@
             box-shadow: 0 3px 0 var(--duo-blue-shadow);
         }
 
-        /* 頂部導覽專用小頁籤 */
         .nav-tab-btn {
             padding: 6px 12px;
             border: 2px solid #e5e7eb;
@@ -264,7 +263,7 @@
             border-color: var(--duo-blue-shadow);
         }
 
-        /* 好友榜與排行榜底色色塊樣式 */
+        /* 恢復原版排行榜與好友卡片底色色塊樣式 */
         .rank-card-box {
             background: #f9fafb;
             border: 2px solid #e5e7eb;
@@ -273,16 +272,16 @@
             margin-top: 12px;
         }
 
-        /* 好友與邀請卡片元件 */
-        .friend-item-card {
+        .friend-request-card {
+            background: #ffffff;
+            border: 2px solid var(--duo-blue);
+            border-radius: 14px;
+            padding: 12px;
+            margin-bottom: 12px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 10px 12px;
-            margin-bottom: 8px;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
         }
 
         .hidden { display: none !important; }
@@ -297,7 +296,6 @@
             font-size: 0.95rem;
         }
 
-        /* 月曆控制與表格樣式 */
         .calendar-header-ctrl {
             display: flex;
             justify-content: space-between;
@@ -320,10 +318,6 @@
             justify-content: center;
             font-size: 0.8rem;
         }
-        .calendar-nav-btn:active {
-            background: #e5e7eb;
-        }
-
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -360,7 +354,7 @@
             <p style="font-size: 0.85rem; color:#6b7280; margin-bottom: 15px;">每天陪你一起輕鬆學語言</p>
             
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button id="tab-login" class="tab-btn active">帳號登入</button>
+                <button id="tab-login" class="tab-btn active">會員登入</button>
                 <button id="tab-register" class="tab-btn">新用戶註冊</button>
             </div>
 
@@ -391,7 +385,14 @@
             <p style="margin: 0 0 15px 0; color: #6b7280; font-size: 0.85rem;">請選擇你想切換學習的程度：</p>
 
             <select id="initial-level-select" style="font-weight: bold; margin-bottom: 15px;">
-                <!-- 由 JS 動態依據權限填入 -->
+                <option value="0A">0A 認識字母</option>
+                <option value="1A" selected>1A 基礎級</option>
+                <option value="1B">1B 初級</option>
+                <option value="2A">2A 中初級</option>
+                <option value="2B">2B 中級</option>
+                <option value="3A">3A 中高級</option>
+                <option value="3B">3B 高級</option>
+                <option value="4A">4A 精通級</option>
             </select>
 
             <button id="btn-confirm-initial-level" class="btn-3d btn-3d-primary" style="width: 100%; padding: 10px;">確定切換</button>
@@ -427,8 +428,8 @@
     <div id="modal-add-friend" class="custom-modal hidden">
         <div class="custom-modal-card">
             <h3 style="margin-top:0;"><i class="fa-solid fa-user-plus" style="color: var(--duo-blue);"></i> 新增好友</h3>
-            <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 10px;">請輸入好友的帳號 (Email) 或暱稱：</p>
-            <input type="text" id="input-friend-id" placeholder="好友 Email / 暱稱" />
+            <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 10px;">請輸入好友的 Email 帳號：</p>
+            <input type="email" id="input-friend-id" placeholder="好友 Email (例: user@example.com)" />
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button id="btn-submit-add-friend" class="btn-3d btn-3d-primary" style="flex:1; padding:10px;">發送邀請</button>
                 <button id="btn-cancel-add-friend" class="btn-3d btn-3d-secondary" style="flex:1; padding:10px;">取消</button>
@@ -436,7 +437,7 @@
         </div>
     </div>
 
-    <!-- 連續登入天數儀表板 Modal -->
+    <!-- 打卡月曆 Dashboard Modal -->
     <div id="modal-streak-dashboard" class="custom-modal hidden">
         <div class="custom-modal-card">
             <div class="close-icon-circle" id="btn-close-streak-modal"><i class="fa-solid fa-xmark"></i></div>
@@ -454,7 +455,6 @@
                 </div>
             </div>
 
-            <!-- 月份控制標題 -->
             <div class="calendar-header-ctrl">
                 <div><i class="fa-regular fa-calendar-days" style="color: var(--duo-gold);"></i> 簽到紀錄</div>
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -464,7 +464,6 @@
                 </div>
             </div>
 
-            <!-- 月曆表 -->
             <div class="calendar-grid">
                 <div class="calendar-day-header">日</div><div class="calendar-day-header">一</div><div class="calendar-day-header">二</div><div class="calendar-day-header">三</div><div class="calendar-day-header">四</div><div class="calendar-day-header">五</div><div class="calendar-day-header">六</div>
                 <div id="calendar-days-container" style="display: contents;"></div>
@@ -512,32 +511,32 @@
         
         <!-- 頂部資訊列 -->
         <div class="user-meta-bar">
-            <!-- 1. 個人資料 (含紅點通知) -->
+            <!-- 1. 個人資料與通知小紅點 -->
             <div class="user-meta-item" id="btn-profile-trigger">
                 <i class="fa-solid fa-user" style="color: var(--duo-blue); font-size: 1.05rem;"></i>
                 <span id="lbl-username">學生</span>
-                <div id="dot-unread-invite" class="notification-badge hidden"></div>
+                <div id="profile-notif-badge" class="notification-badge hidden"></div>
             </div>
 
-            <!-- 2. 連續登入天數 (鮮豔紅) -->
+            <!-- 2. 連續登入天數 -->
             <div class="user-meta-item" id="btn-streak-trigger">
                 <i class="fa-solid fa-fire" style="color: var(--duo-fire-red); font-size: 1.05rem;"></i>
                 <span id="lbl-login-days">1</span>天
             </div>
 
-            <!-- 3. 星星 / XP (黃色) -->
+            <!-- 3. 星星 / XP -->
             <div class="user-meta-item">
                 <i class="fa-solid fa-star" style="color: var(--duo-gold); font-size: 1.05rem;"></i>
                 <span id="lbl-xp">0</span>
             </div>
 
-            <!-- 4. 閃電 / 能量 (紫藍色) -->
+            <!-- 4. 閃電 / 能量 -->
             <div class="user-meta-item">
                 <i class="fa-solid fa-bolt-lightning" style="color: var(--duo-lightning); font-size: 1.05rem;"></i>
                 <span id="lbl-energy">100</span>
             </div>
 
-            <!-- 5. 程度 (點擊觸發選擇 Modal) -->
+            <!-- 5. 程度選擇 -->
             <div class="user-meta-item" id="btn-level-trigger">
                 <span id="lbl-user-level" style="color: var(--duo-blue);">1A</span>
                 <i class="fa-solid fa-caret-down" style="font-size: 0.75rem; color: #9ca3af;"></i>
@@ -547,11 +546,11 @@
         <!-- 視圖 1：學習地圖 (Map View) -->
         <div id="map-view" class="map-container">
             <div id="units-map-list" style="width: 100%; display: flex; flex-direction: column; gap: 16px;">
-                <!-- 由 JS 動態生成單元 -->
+                <!-- 由 JS 動態生成 -->
             </div>
         </div>
 
-        <!-- 視圖 2：右上角個人分頁 (Profile / Leaderboard View) -->
+        <!-- 視圖 2：個人／排行榜主頁 -->
         <div id="profile-view" class="hidden" style="padding: 15px; width: 100%; box-sizing: border-box;">
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -569,38 +568,38 @@
                 </div>
             </div>
 
-            <!-- 分頁區 1：學習排行榜 (預設顯示) -->
+            <!-- 分頁區 1：學習排行榜 (與個人檔案同一頁面時的質感樣式) -->
             <div id="sub-page-leaderboard" class="unit-card">
-                <h3 style="margin-top:0; color: #1f2937;"><i class="fa-solid fa-trophy" style="color: var(--duo-gold);"></i> 學習排行榜</h3>
+                <h3 style="margin-top:0; color: #1f2937; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px;">
+                    <i class="fa-solid fa-trophy" style="color: var(--duo-gold);"></i> 學習排行榜
+                </h3>
                 
                 <div style="display: flex; gap: 8px; margin-bottom: 12px; background: #f3f4f6; padding: 6px; border-radius: 14px;">
                     <button class="tab-btn active" id="tab-leaderboard-friends">好友榜</button>
                     <button class="tab-btn" id="tab-leaderboard-global">同程度總榜</button>
                 </div>
 
-                <!-- 好友榜區塊 -->
+                <!-- 待處理好友邀請列表 (即時收到的通知卡片區塊) -->
+                <div id="pending-friend-requests-container" class="hidden">
+                    <!-- 動態生成邀請卡片 -->
+                </div>
+
+                <!-- 好友榜內容 -->
                 <div id="content-rank-friends" class="rank-card-box">
-                    
-                    <!-- 📩 待處理的好友邀請區塊 (有邀請時會顯示) -->
-                    <div id="box-friend-requests" class="hidden" style="background: #eff6ff; border: 1px dashed var(--duo-blue); border-radius: 12px; padding: 12px; margin-bottom: 15px;">
-                        <div style="font-size: 0.85rem; font-weight: bold; color: var(--duo-blue); margin-bottom: 8px;"><i class="fa-solid fa-envelope-open-text"></i> 待處理的好友邀請：</div>
-                        <div id="list-friend-requests"></div>
-                    </div>
-
-                    <!-- 好友列表與新增按鈕 -->
-                    <div id="list-my-friends">
-                        <p style="font-size: 0.9rem; color: #6b7280; text-align: center; margin-bottom: 12px;">尚未新增任何好友</p>
-                    </div>
-
-                    <div style="text-align: center; margin-top: 12px;">
-                        <button id="btn-open-add-friend" class="btn-3d btn-3d-secondary" style="padding: 8px 16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                        <span style="font-weight:bold; color:#374151;">我的好友列表</span>
+                        <button id="btn-open-add-friend" class="btn-3d btn-3d-primary" style="padding: 6px 12px; font-size: 0.8rem !important;">
                             <i class="fa-solid fa-user-plus"></i> 新增好友
                         </button>
                     </div>
+                    <div id="friends-list-container" style="display:flex; flex-direction:column; gap:10px;">
+                        <p style="font-size: 0.88rem; color: #6b7280; text-align: center; margin: 10px 0;">尚未新增好友，快點擊上方按鈕邀請朋友吧！</p>
+                    </div>
                 </div>
 
+                <!-- 總榜內容 -->
                 <div id="content-rank-global" class="rank-card-box hidden" style="text-align: center;">
-                    <p style="font-size: 0.9rem; color: #6b7280; margin: 0;">🏆 程度排行榜連線中...</p>
+                    <p style="font-size: 0.9rem; color: #6b7280; margin: 0;">🏆 <span id="lbl-global-rank-level">1A</span> 程度全球排行榜連線中...</p>
                 </div>
             </div>
 
@@ -622,7 +621,7 @@
                         <span id="profile-email">email@example.com</span>
                     </div>
                     <div class="profile-row">
-                        <span style="color: #6b7280;">開通程度權限：</span>
+                        <span style="color: #6b7280;">已開通程度權限：</span>
                         <span id="profile-allowed-level" style="color: var(--duo-blue); font-weight: bold;">1A</span>
                     </div>
                     <div class="profile-row">
