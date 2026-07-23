@@ -44,7 +44,7 @@ function checkAndUpdateStreak(userData) {
     return { streak, lastLoginDate: today, loginHistory };
 }
 
-// 🗓️ 動態繪製可切換月份的月曆
+// 動態繪製月曆
 function renderStreakCalendar(loginHistory = [], year = viewYear, month = viewMonth) {
     const container = document.getElementById('calendar-days-container');
     const monthTitle = document.getElementById('lbl-calendar-month-title');
@@ -58,14 +58,12 @@ function renderStreakCalendar(loginHistory = [], year = viewYear, month = viewMo
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    // 補齊月前空白天數
     for (let i = 0; i < firstDay; i++) {
         const emptyCell = document.createElement('div');
         emptyCell.className = 'calendar-day';
         container.appendChild(emptyCell);
     }
 
-    // 繪製日期
     for (let day = 1; day <= daysInMonth; day++) {
         const dayCell = document.createElement('div');
         dayCell.className = 'calendar-day';
@@ -113,7 +111,7 @@ function bindMapStageButtons() {
     const modalWarmupAsk = document.getElementById('modal-warmup-ask');
 
     document.querySelectorAll('.stage-btn-3d').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.onclick = (e) => {
             const target = e.currentTarget;
             currentSelectedUnit = target.getAttribute('data-unit');
             const isLocked = target.classList.contains('locked');
@@ -124,7 +122,7 @@ function bindMapStageButtons() {
             } else {
                 modalWarmupAsk?.classList.remove('hidden');
             }
-        });
+        };
     });
 }
 
@@ -134,7 +132,7 @@ function updateUIProfile(data) {
     // 頂部 Bar
     document.getElementById('lbl-username').innerText = data.nickname || '學生';
     document.getElementById('lbl-login-days').innerText = data.streak || 1;
-    document.getElementById('lbl-user-level').innerText = data.allowedLevel || '1A';
+    document.getElementById('lbl-user-level').innerText = currentSelectedLevel || data.allowedLevel || '1A';
     document.getElementById('lbl-energy').innerText = data.energy || 100;
     document.getElementById('lbl-xp').innerText = data.xp || 0;
 
@@ -163,49 +161,55 @@ function setupNavigationAndModals() {
     const modalLogoutConfirm = document.getElementById('modal-logout-confirm');
     const modalLevelSelect = document.getElementById('modal-select-initial-level');
 
-    // 🌟 打卡儀表板觸發與跨月切換
-    document.getElementById('btn-streak-trigger')?.addEventListener('click', () => {
-        const now = new Date();
-        viewYear = now.getFullYear();
-        viewMonth = now.getMonth();
-        renderStreakCalendar(currentUserData?.loginHistory || [], viewYear, viewMonth);
-        modalStreakDashboard?.classList.remove('hidden');
-    });
+    // 打卡儀表板觸發與跨月切換
+    const streakBtn = document.getElementById('btn-streak-trigger');
+    if (streakBtn) {
+        streakBtn.onclick = () => {
+            const now = new Date();
+            viewYear = now.getFullYear();
+            viewMonth = now.getMonth();
+            renderStreakCalendar(currentUserData?.loginHistory || [], viewYear, viewMonth);
+            modalStreakDashboard?.classList.remove('hidden');
+        };
+    }
 
-    document.getElementById('btn-close-streak-modal')?.addEventListener('click', () => {
+    document.getElementById('btn-close-streak-modal').onclick = () => {
         modalStreakDashboard?.classList.add('hidden');
-    });
+    };
 
-    document.getElementById('btn-cal-prev')?.addEventListener('click', () => {
+    document.getElementById('btn-cal-prev').onclick = () => {
         viewMonth--;
         if (viewMonth < 0) {
             viewMonth = 11;
             viewYear--;
         }
         renderStreakCalendar(currentUserData?.loginHistory || [], viewYear, viewMonth);
-    });
+    };
 
-    document.getElementById('btn-cal-next')?.addEventListener('click', () => {
+    document.getElementById('btn-cal-next').onclick = () => {
         viewMonth++;
         if (viewMonth > 11) {
             viewMonth = 0;
             viewYear++;
         }
         renderStreakCalendar(currentUserData?.loginHistory || [], viewYear, viewMonth);
-    });
+    };
 
-    // 🌟 點擊頂部「程度」選擇 Modal
-    document.getElementById('btn-level-trigger')?.addEventListener('click', () => {
-        const select = document.getElementById('initial-level-select');
-        if (select) select.value = currentSelectedLevel;
-        modalLevelSelect?.classList.remove('hidden');
-    });
+    // 🌟 點擊頂部「程度」觸發 Modal 選擇
+    const levelTrigger = document.getElementById('btn-level-trigger');
+    if (levelTrigger) {
+        levelTrigger.onclick = () => {
+            const select = document.getElementById('initial-level-select');
+            if (select) select.value = currentSelectedLevel;
+            modalLevelSelect?.classList.remove('hidden');
+        };
+    }
 
-    document.getElementById('btn-close-level-modal')?.addEventListener('click', () => {
+    document.getElementById('btn-close-level-modal').onclick = () => {
         modalLevelSelect?.classList.add('hidden');
-    });
+    };
 
-    document.getElementById('btn-confirm-initial-level')?.addEventListener('click', async () => {
+    document.getElementById('btn-confirm-initial-level').onclick = () => {
         const selected = document.getElementById('initial-level-select').value;
         const allowed = currentUserData?.allowedLevel || '1A';
 
@@ -219,31 +223,71 @@ function setupNavigationAndModals() {
             document.getElementById('lbl-user-level').innerText = selected;
             modalLevelSelect?.classList.add('hidden');
         }
-    });
+    };
 
-    // Leaderboard Tab 切換
+    // 🌟 頂部點選個人資料，開啟視圖並預設顯示排行榜
+    const btnProfileTrigger = document.getElementById('btn-profile-trigger');
+    const subPageLeaderboard = document.getElementById('sub-page-leaderboard');
+    const subPageProfile = document.getElementById('sub-page-profile');
+    const btnViewLeaderboard = document.getElementById('btn-view-leaderboard');
+    const btnViewProfile = document.getElementById('btn-view-profile');
+
+    if (btnProfileTrigger) {
+        btnProfileTrigger.onclick = () => {
+            mapView?.classList.add('hidden');
+            gameView?.classList.add('hidden');
+            profileView?.classList.remove('hidden');
+
+            // 預設切換至排行榜分頁
+            btnViewLeaderboard?.classList.add('active');
+            btnViewProfile?.classList.remove('active');
+            subPageLeaderboard?.classList.remove('hidden');
+            subPageProfile?.classList.add('hidden');
+        };
+    }
+
+    // [學習排行榜] / [個人檔案] 切換頁籤按鈕
+    if (btnViewLeaderboard && btnViewProfile) {
+        btnViewLeaderboard.onclick = () => {
+            btnViewLeaderboard.classList.add('active');
+            btnViewProfile.classList.remove('active');
+            subPageLeaderboard?.classList.remove('hidden');
+            subPageProfile?.classList.add('hidden');
+        };
+
+        btnViewProfile.onclick = () => {
+            btnViewProfile.classList.add('active');
+            btnViewLeaderboard.classList.remove('active');
+            subPageProfile?.classList.remove('hidden');
+            subPageLeaderboard?.classList.add('hidden');
+        };
+    }
+
+    // Leaderboard 內部 Friends / Global Tab 切換
     const tabFriends = document.getElementById('tab-leaderboard-friends');
     const tabGlobal = document.getElementById('tab-leaderboard-global');
     const contentFriends = document.getElementById('content-rank-friends');
     const contentGlobal = document.getElementById('content-rank-global');
 
-    tabFriends?.addEventListener('click', () => {
-        tabFriends.classList.add('active');
-        tabGlobal.classList.remove('active');
-        contentFriends?.classList.remove('hidden');
-        contentGlobal?.classList.add('hidden');
-    });
+    if (tabFriends && tabGlobal) {
+        tabFriends.onclick = () => {
+            tabFriends.classList.add('active');
+            tabGlobal.classList.remove('active');
+            contentFriends?.classList.remove('hidden');
+            contentGlobal?.classList.add('hidden');
+        };
 
-    tabGlobal?.addEventListener('click', () => {
-        tabGlobal.classList.add('active');
-        tabFriends.classList.remove('active');
-        contentGlobal?.classList.remove('hidden');
-        contentFriends?.classList.add('hidden');
-    });
+        tabGlobal.onclick = () => {
+            tabGlobal.classList.add('active');
+            tabFriends.classList.remove('active');
+            contentGlobal?.classList.remove('hidden');
+            contentFriends?.classList.add('hidden');
+        };
+    }
 
     // 修改暱稱 Modal
     const modalEditNickname = document.getElementById('modal-edit-nickname');
-    document.getElementById('btn-open-edit-nickname')?.addEventListener('click', () => {
+    document.getElementById('btn-open-edit-nickname').onclick = () => {
         const lastChange = currentUserData?.lastNicknameChange;
         if (lastChange) {
             const lastDate = new Date(lastChange);
@@ -255,13 +299,13 @@ function setupNavigationAndModals() {
             }
         }
         modalEditNickname?.classList.remove('hidden');
-    });
+    };
 
-    document.getElementById('btn-cancel-nickname')?.addEventListener('click', () => {
+    document.getElementById('btn-cancel-nickname').onclick = () => {
         modalEditNickname?.classList.add('hidden');
-    });
+    };
 
-    document.getElementById('btn-save-nickname')?.addEventListener('click', async () => {
+    document.getElementById('btn-save-nickname').onclick = async () => {
         const newNick = document.getElementById('input-new-nickname')?.value.trim();
         if (!newNick) return alert("請輸入有效暱稱！");
 
@@ -276,19 +320,19 @@ function setupNavigationAndModals() {
         updateUIProfile(currentUserData);
         modalEditNickname?.classList.add('hidden');
         alert("暱稱修改成功！");
-    });
+    };
 
     // 修改密碼 Modal
     const modalChangePassword = document.getElementById('modal-change-password');
-    document.getElementById('btn-open-change-password')?.addEventListener('click', () => {
+    document.getElementById('btn-open-change-password').onclick = () => {
         modalChangePassword?.classList.remove('hidden');
-    });
+    };
 
-    document.getElementById('btn-cancel-password')?.addEventListener('click', () => {
+    document.getElementById('btn-cancel-password').onclick = () => {
         modalChangePassword?.classList.add('hidden');
-    });
+    };
 
-    document.getElementById('btn-save-password')?.addEventListener('click', async () => {
+    document.getElementById('btn-save-password').onclick = async () => {
         const newPass = document.getElementById('input-new-password')?.value.trim();
         if (!newPass || newPass.length < 6) return alert("密碼至少需為 6 位數！");
 
@@ -299,74 +343,67 @@ function setupNavigationAndModals() {
         } catch (err) {
             alert(`修改密碼失敗: ${err.message}`);
         }
-    });
+    };
 
     // 新增好友 Modal
     const modalAddFriend = document.getElementById('modal-add-friend');
-    document.getElementById('btn-open-add-friend')?.addEventListener('click', () => {
+    document.getElementById('btn-open-add-friend').onclick = () => {
         modalAddFriend?.classList.remove('hidden');
-    });
+    };
 
-    document.getElementById('btn-cancel-add-friend')?.addEventListener('click', () => {
+    document.getElementById('btn-cancel-add-friend').onclick = () => {
         modalAddFriend?.classList.add('hidden');
-    });
+    };
 
-    document.getElementById('btn-submit-add-friend')?.addEventListener('click', () => {
+    document.getElementById('btn-submit-add-friend').onclick = () => {
         const friendInput = document.getElementById('input-friend-id')?.value.trim();
         if (!friendInput) return alert("請輸入好友的帳號或暱稱！");
         alert(`已成功發送好友邀請給 [${friendInput}]！等待對方確認。`);
         modalAddFriend?.classList.add('hidden');
-    });
+    };
 
-    // 視圖導覽
-    document.getElementById('btn-profile-trigger')?.addEventListener('click', () => {
-        mapView?.classList.add('hidden');
-        gameView?.classList.add('hidden');
-        profileView?.classList.remove('hidden');
-    });
-
-    document.getElementById('btn-profile-back-map')?.addEventListener('click', () => {
+    // 視圖導覽按鈕
+    document.getElementById('btn-profile-back-map').onclick = () => {
         profileView?.classList.add('hidden');
         mapView?.classList.remove('hidden');
-    });
+    };
 
-    document.getElementById('btn-close-locked-modal')?.addEventListener('click', () => {
+    document.getElementById('btn-close-locked-modal').onclick = () => {
         modalLocked?.classList.add('hidden');
-    });
+    };
 
-    // 課前暖身關閉與按鈕
-    document.getElementById('btn-close-warmup-ask')?.addEventListener('click', () => {
+    document.getElementById('btn-close-warmup-ask').onclick = () => {
         modalWarmupAsk?.classList.add('hidden');
-    });
+    };
 
-    document.getElementById('btn-warmup-yes')?.addEventListener('click', () => {
+    document.getElementById('btn-warmup-yes').onclick = () => {
         modalWarmupAsk?.classList.add('hidden');
         alert("即將進入 Step 2 課前暖身頁面！");
-    });
+    };
 
-    document.getElementById('btn-warmup-no')?.addEventListener('click', () => {
+    document.getElementById('btn-warmup-no').onclick = () => {
         modalWarmupAsk?.classList.add('hidden');
         mapView?.classList.add('hidden');
         gameView?.classList.remove('hidden');
-    });
+    };
 
-    document.getElementById('btn-back-to-map')?.addEventListener('click', () => {
+    document.getElementById('btn-back-to-map').onclick = () => {
         gameView?.classList.add('hidden');
         mapView?.classList.remove('hidden');
-    });
+    };
 
-    document.getElementById('btn-trigger-logout')?.addEventListener('click', () => {
+    document.getElementById('btn-trigger-logout').onclick = () => {
         modalLogoutConfirm?.classList.remove('hidden');
-    });
+    };
 
-    document.getElementById('btn-logout-no')?.addEventListener('click', () => {
+    document.getElementById('btn-logout-no').onclick = () => {
         modalLogoutConfirm?.classList.add('hidden');
-    });
+    };
 
-    document.getElementById('btn-logout-yes')?.addEventListener('click', async () => {
+    document.getElementById('btn-logout-yes').onclick = async () => {
         modalLogoutConfirm?.classList.add('hidden');
         await AuthService.logout();
-    });
+    };
 
     renderMapUnits(currentCategory, currentSelectedLevel);
 }
@@ -379,21 +416,21 @@ function setupAuthEventListeners() {
     const loginModal = document.getElementById('login-modal');
     const mainApp = document.getElementById('main-app');
 
-    tabLogin?.addEventListener('click', () => {
+    tabLogin.onclick = () => {
         authMode = 'login';
         tabLogin.classList.add('active');
         tabRegister.classList.remove('active');
         registerFields?.classList.add('hidden');
-    });
+    };
 
-    tabRegister?.addEventListener('click', () => {
+    tabRegister.onclick = () => {
         authMode = 'register';
         tabRegister.classList.add('active');
         tabLogin.classList.remove('active');
         registerFields?.classList.remove('hidden');
-    });
+    };
 
-    btnSubmit?.addEventListener('click', async () => {
+    btnSubmit.onclick = async () => {
         const email = document.getElementById('email-input')?.value.trim();
         const password = document.getElementById('password-input')?.value.trim();
 
@@ -413,7 +450,7 @@ function setupAuthEventListeners() {
         } finally {
             btnSubmit.disabled = false;
         }
-    });
+    };
 
     AuthService.onAuthStateChanged(async (user) => {
         if (user) {
@@ -451,6 +488,7 @@ function setupAuthEventListeners() {
                     document.getElementById('modal-select-initial-level')?.classList.add('hidden');
                     
                     mainApp?.classList.remove('hidden');
+                    currentSelectedLevel = selectedLevel;
                     updateUIProfile(newUserData);
                     renderMapUnits(currentCategory, selectedLevel);
                 };
