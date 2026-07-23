@@ -26,8 +26,8 @@
             --duo-red: #ff4b4b;
             --duo-red-shadow: #ea2b2b;
             --duo-gold: #f59e0b;
-            --duo-lightning: #a5b4fc; /* 閃電紫藍色 */
-            --duo-fire-red: #ef4444; /* 鮮豔紅 */
+            --duo-lightning: #a5b4fc;
+            --duo-fire-red: #ef4444;
         }
 
         body {
@@ -75,10 +75,23 @@
             border-radius: 10px;
             user-select: none;
             touch-action: manipulation;
+            position: relative;
         }
 
         .user-meta-item:active {
             background-color: #f3f4f6;
+        }
+
+        /* 紅點通知印記 */
+        .notification-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 10px;
+            height: 10px;
+            background-color: var(--duo-red);
+            border: 2px solid white;
+            border-radius: 50%;
         }
 
         /* 通用按鈕樣式 */
@@ -185,7 +198,7 @@
             font-size: 0.95rem;
         }
 
-        /* 🌟 Modal 彈窗與圓圈關閉 Icon */
+        /* Modal 彈窗與圓圈關閉 Icon */
         .custom-modal {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -251,13 +264,25 @@
             border-color: var(--duo-blue-shadow);
         }
 
-        /* 恢復好友榜與排行榜底色色塊樣式 */
+        /* 好友榜與排行榜底色色塊樣式 */
         .rank-card-box {
             background: #f9fafb;
             border: 2px solid #e5e7eb;
             border-radius: 16px;
             padding: 16px;
             margin-top: 12px;
+        }
+
+        /* 好友與邀請卡片元件 */
+        .friend-item-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
         }
 
         .hidden { display: none !important; }
@@ -335,7 +360,7 @@
             <p style="font-size: 0.85rem; color:#6b7280; margin-bottom: 15px;">每天陪你一起輕鬆學語言</p>
             
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button id="tab-login" class="tab-btn active">時間登入</button>
+                <button id="tab-login" class="tab-btn active">帳號登入</button>
                 <button id="tab-register" class="tab-btn">新用戶註冊</button>
             </div>
 
@@ -366,14 +391,7 @@
             <p style="margin: 0 0 15px 0; color: #6b7280; font-size: 0.85rem;">請選擇你想切換學習的程度：</p>
 
             <select id="initial-level-select" style="font-weight: bold; margin-bottom: 15px;">
-                <option value="0A">0A 認識字母</option>
-                <option value="1A" selected>1A 基礎級</option>
-                <option value="1B">1B 初級</option>
-                <option value="2A">2A 中初級</option>
-                <option value="2B">2B 中級</option>
-                <option value="3A">3A 中高級</option>
-                <option value="3B">3B 高級</option>
-                <option value="4A">4A 精通級</option>
+                <!-- 由 JS 動態依據權限填入 -->
             </select>
 
             <button id="btn-confirm-initial-level" class="btn-3d btn-3d-primary" style="width: 100%; padding: 10px;">確定切換</button>
@@ -494,10 +512,11 @@
         
         <!-- 頂部資訊列 -->
         <div class="user-meta-bar">
-            <!-- 1. 個人資料 -->
+            <!-- 1. 個人資料 (含紅點通知) -->
             <div class="user-meta-item" id="btn-profile-trigger">
                 <i class="fa-solid fa-user" style="color: var(--duo-blue); font-size: 1.05rem;"></i>
                 <span id="lbl-username">學生</span>
+                <div id="dot-unread-invite" class="notification-badge hidden"></div>
             </div>
 
             <!-- 2. 連續登入天數 (鮮豔紅) -->
@@ -535,7 +554,6 @@
         <!-- 視圖 2：右上角個人分頁 (Profile / Leaderboard View) -->
         <div id="profile-view" class="hidden" style="padding: 15px; width: 100%; box-sizing: border-box;">
             
-            <!-- 頂部導覽區：[返回地圖] 與分頁按鈕 [學習排行榜] / [個人檔案] 同排 -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <button id="btn-profile-back-map" class="btn-3d btn-3d-secondary" style="padding: 6px 14px;">
                     <i class="fa-solid fa-arrow-left"></i> 返回地圖
@@ -560,16 +578,29 @@
                     <button class="tab-btn" id="tab-leaderboard-global">同程度總榜</button>
                 </div>
 
-                <!-- 恢復原版底色色塊區域 -->
-                <div id="content-rank-friends" class="rank-card-box" style="text-align: center;">
-                    <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 12px;">[好友榜] 尚未連結好友</p>
-                    <button id="btn-open-add-friend" class="btn-3d btn-3d-secondary" style="padding: 8px 16px;">
-                        <i class="fa-solid fa-user-plus"></i> 新增好友
-                    </button>
+                <!-- 好友榜區塊 -->
+                <div id="content-rank-friends" class="rank-card-box">
+                    
+                    <!-- 📩 待處理的好友邀請區塊 (有邀請時會顯示) -->
+                    <div id="box-friend-requests" class="hidden" style="background: #eff6ff; border: 1px dashed var(--duo-blue); border-radius: 12px; padding: 12px; margin-bottom: 15px;">
+                        <div style="font-size: 0.85rem; font-weight: bold; color: var(--duo-blue); margin-bottom: 8px;"><i class="fa-solid fa-envelope-open-text"></i> 待處理的好友邀請：</div>
+                        <div id="list-friend-requests"></div>
+                    </div>
+
+                    <!-- 好友列表與新增按鈕 -->
+                    <div id="list-my-friends">
+                        <p style="font-size: 0.9rem; color: #6b7280; text-align: center; margin-bottom: 12px;">尚未新增任何好友</p>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 12px;">
+                        <button id="btn-open-add-friend" class="btn-3d btn-3d-secondary" style="padding: 8px 16px;">
+                            <i class="fa-solid fa-user-plus"></i> 新增好友
+                        </button>
+                    </div>
                 </div>
 
                 <div id="content-rank-global" class="rank-card-box hidden" style="text-align: center;">
-                    <p style="font-size: 0.9rem; color: #6b7280; margin: 0;">🏆 1A 程度排行榜連線中...</p>
+                    <p style="font-size: 0.9rem; color: #6b7280; margin: 0;">🏆 程度排行榜連線中...</p>
                 </div>
             </div>
 
