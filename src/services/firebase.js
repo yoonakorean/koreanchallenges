@@ -1,17 +1,41 @@
-export const FirestoreService = {
-    async saveProgress(userId, progressData) {
-        console.log(`[Firestore] 保存進度:`, userId, progressData);
-        // db.collection('users').doc(userId).update(progressData)
-    },
-    async loadProgress(userId) {
-        console.log(`[Firestore] 讀取進度:`, userId);
-        // return await db.collection('users').doc(userId).get()
-        return {};
-    },
-    async saveXP(userId, xpAmount) {
-        console.log(`[Firestore] 更新 XP:`, userId, xpAmount);
-    },
-    async saveReview(userId, wordId, performanceData) {
-        console.log(`[Firestore] 保存單字 SRS 複習紀錄:`, userId, wordId, performanceData);
+// Firestore 資料庫服務模組
+export class FirestoreService {
+    // 取得使用者資料
+    static async getUserData(uid) {
+        try {
+            const db = firebase.firestore();
+            const docRef = db.collection('users').doc(uid);
+            const docSnap = await docRef.get();
+            if (docSnap.exists) {
+                return docSnap.data();
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("讀取使用者資料失敗:", error);
+            throw error;
+        }
     }
-};
+
+    // 新增/覆寫使用者資料
+    static async saveUserData(uid, data) {
+        try {
+            const db = firebase.firestore();
+            await db.collection('users').doc(uid).set(data, { merge: true });
+        } catch (error) {
+            console.error("儲存使用者資料失敗:", error);
+            throw error;
+        }
+    }
+
+    // 更新部分使用者資料
+    static async updateUserData(uid, data) {
+        try {
+            const db = firebase.firestore();
+            await db.collection('users').doc(uid).update(data);
+        } catch (error) {
+            console.error("更新使用者資料失敗:", error);
+            throw error;
+        }
+    }
+}
