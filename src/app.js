@@ -1,14 +1,15 @@
 import { AuthService } from './services/auth.js';
 import { FirestoreService } from './services/firebase.js';
 
-// 💡 請在此處貼上您部署獲得的 GAS Web App URL
-const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzcpVJShHN94x3-igocTch4A9nsvwgBvIc_Qe-yCFhwFKTkQm97TMkysZqalBVQaf_M/exec";
+// 🔗 Google Apps Script 白名單 API 網址 (請填入您部署完成的 URL)
+const GAS_API_URL = "https://script.google.com/macros/s/YOUR_GAS_DEPLOYMENT_ID/exec";
 
 let authMode = 'login'; 
 let currentCategory = 'korean';
 let currentSelectedLevel = '1A';
 let currentSelectedUnit = 1;
 let currentUserData = null;
+let friendRequestsUnsubscribe = null;
 
 let viewYear = 2026;
 let viewMonth = 6; 
@@ -24,21 +25,21 @@ const MULTI_LANG_COURSES = {
     }
 };
 
-// 向 Google 試算表 API 查驗白名單權限
-async function fetchWhitelistData(email) {
-    if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GOOGLE_APPS_SCRIPT")) {
-        console.warn("尚未設定有效的 GAS_WEB_APP_URL，預設載入 1A 權限。");
-        return { allowedLevels: ['1A', '1B'], expireAt: '2026-12-31', active: true };
+// 向 Google 試算表查詢會員白名單
+async function fetchSheetPermissions(email) {
+    if (!GAS_API_URL || GAS_API_URL.includes("YOUR_GAS_DEPLOYMENT_ID")) {
+        console.warn("GAS_API_URL 未設定，使用預設全權限運作。");
+        return null;
     }
 
     try {
-        const response = await fetch(`${GAS_WEB_APP_URL}?email=${encodeURIComponent(email)}`);
-        const result = await response.json();
-        if (result.status === "success") {
-            return result;
+        const response = await fetch(`${GAS_API_URL}?email=${encodeURIComponent(email)}`);
+        const data = await response.json();
+        if (data && data.status === 'success') {
+            return data;
         }
-    } catch (error) {
-        console.error("讀取試算表白名單失敗:", error);
+    } catch (err) {
+        console.error("讀取 Google 試算表失敗:", err);
     }
     return null;
 }
@@ -146,148 +147,101 @@ function bindMapStageButtons() {
     });
 }
 
-// 渲染好友邀請與好友列表 (含刪除按鈕)
-function renderFriendsUI(data) {
-    const requestsBox = document.getElementById('box-friend-requests');
-    const requestsList = document.getElementById('list-friend-requests');
-    const friendsList = document.getElementById('list-my-friends');
-    const unreadDot = document.getElementById('dot-unread-invite');
-
-    const incomingRequests = data.friendRequests || [];
-    const friends = data.friends || [];
-
-    // 處理待接受邀請
-    if (incomingRequests.length > 0) {
-        requestsBox?.classList.remove('hidden');
-        unreadDot?.classList.remove('hidden');
-        if (requestsList) {
-            requestsList.innerHTML = incomingRequests.map(req => `
-                <div class="friend-item-card">
-                    <div style="text-align: left;">
-                        <strong style="font-size: 0.9rem; color: #1f2937;">${req.nickname || '學員'}</strong>
-                        <div style="font-size: 0.75rem; color: #6b7280;">${req.email}</div>
-                    </div>
-                    <div style="display: flex; gap: 6px;">
-                        <button class="btn-3d btn-3d-primary btn-accept-friend" data-email="${req.email}" style="padding: 4px 10px; font-size: 0.8rem !important;">接受</button>
-                        <button class="btn-3d btn-3d-secondary btn-reject-friend" data-email="${req.email}" style="padding: 4px 10px; font-size: 0.8rem !important;">拒絕</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-    } else {
-        requestsBox?.classList.add('hidden');
-        unreadDot?.classList.add('hidden');
-    }
-
-    // 渲染已有好友列表 (支援刪除好友)
-    if (friendsList) {
-        if (friends.length === 0) {
-            friendsList.innerHTML = `<p style="font-size: 0.9rem; color: #6b7280; text-align: center; margin-bottom: 12px;">尚未新增任何好友</p>`;
-        } else {
-            friendsList.innerHTML = friends.map(f => `
-                <div class="friend-item-card">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <i class="fa-solid fa-circle-user" style="font-size: 1.8rem; color: var(--duo-blue);"></i>
-                        <div style="text-align: left;">
-                            <div style="font-size: 0.9rem; font-weight: bold; color: #1f2937;">${f.nickname}</div>
-                            <div style="font-size: 0.75rem; color: var(--duo-gold);"><i class="fa-solid fa-star"></i> ${f.xp || 0} XP</div>
-                        </div>
-                    </div>
-                    <button class="btn-3d btn-remove-friend" data-email="${f.email}" style="padding: 4px 8px; font-size: 0.75rem !important; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5;">
-                        <i class="fa-solid fa-user-minus"></i> 刪除
-                    </button>
-                </div>
-            `).join('');
-        }
-    }
-
-    bindFriendActions();
-}
-
-function bindFriendActions() {
-    // 接受邀請
-    document.querySelectorAll('.btn-accept-friend').forEach(btn => {
-        btn.onclick = async (e) => {
-            const targetEmail = e.currentTarget.getAttribute('data-email');
-            const req = currentUserData.friendRequests.find(r => r.email === targetEmail);
-            
-            currentUserData.friendRequests = currentUserData.friendRequests.filter(r => r.email !== targetEmail);
-            currentUserData.friends = currentUserData.friends || [];
-            currentUserData.friends.push(req);
-
-            await FirestoreService.updateUserData(currentUserData.uid, {
-                friendRequests: currentUserData.friendRequests,
-                friends: currentUserData.friends
-            });
-
-            renderFriendsUI(currentUserData);
-            alert(`已接受 [${req.nickname}] 的好友邀請！`);
-        };
-    });
-
-    // 拒絕邀請
-    document.querySelectorAll('.btn-reject-friend').forEach(btn => {
-        btn.onclick = async (e) => {
-            const targetEmail = e.currentTarget.getAttribute('data-email');
-            currentUserData.friendRequests = currentUserData.friendRequests.filter(r => r.email !== targetEmail);
-
-            await FirestoreService.updateUserData(currentUserData.uid, {
-                friendRequests: currentUserData.friendRequests
-            });
-
-            renderFriendsUI(currentUserData);
-        };
-    });
-
-    // 刪除好友
-    document.querySelectorAll('.btn-remove-friend').forEach(btn => {
-        btn.onclick = async (e) => {
-            const targetEmail = e.currentTarget.getAttribute('data-email');
-            if (confirm(`確定要將 [${targetEmail}] 從好友名單中移除嗎？`)) {
-                currentUserData.friends = currentUserData.friends.filter(f => f.email !== targetEmail);
-                
-                await FirestoreService.updateUserData(currentUserData.uid, {
-                    friends: currentUserData.friends
-                });
-
-                renderFriendsUI(currentUserData);
-                alert("已成功移除該好友！");
-            }
-        };
-    });
-}
-
 function updateUIProfile(data) {
     currentUserData = data;
-    const allowedLevels = Array.isArray(data.allowedLevels) ? data.allowedLevels : [data.allowedLevel || '1A'];
+    
+    const allowedList = data.allowedLevels || ['0A', '1A', '1B', '2A', '2B', '3A', '3B', '4A'];
 
-    // 頂部 Bar
     document.getElementById('lbl-username').innerText = data.nickname || '學生';
     document.getElementById('lbl-login-days').innerText = data.streak || 1;
     document.getElementById('lbl-user-level').innerText = currentSelectedLevel;
     document.getElementById('lbl-energy').innerText = data.energy || 100;
     document.getElementById('lbl-xp').innerText = data.xp || 0;
 
-    // 個人檔案頁面
     document.getElementById('profile-nickname').innerText = data.nickname || '學生';
     document.getElementById('profile-email').innerText = data.email || '';
-    document.getElementById('profile-allowed-level').innerText = allowedLevels.join(', ');
+    document.getElementById('profile-allowed-level').innerText = allowedList.join(', ');
     document.getElementById('profile-expire-date').innerText = data.expireAt || '未定';
     document.getElementById('profile-energy').innerText = data.energy || 100;
     document.getElementById('profile-xp').innerText = data.xp || 0;
     document.getElementById('profile-streak').innerText = data.streak || 1;
 
-    // 打卡儀表板
+    document.getElementById('lbl-global-rank-level').innerText = currentSelectedLevel;
+
     document.getElementById('dash-streak-days').innerText = data.streak || 1;
     document.getElementById('dash-focus-hours').innerText = (data.focusHours || 0.0).toFixed(1);
+}
 
-    // 填充選單
-    const levelSelect = document.getElementById('initial-level-select');
-    if (levelSelect) {
-        levelSelect.innerHTML = allowedLevels.map(lvl => `<option value="${lvl}">${lvl} 程度課程</option>`).join('');
-    }
+// 👂 即時監聽好友邀請通知 (1秒內顯示紅點與卡片)
+function listenForFriendRequests(uid) {
+    if (friendRequestsUnsubscribe) friendRequestsUnsubscribe();
 
-    renderFriendsUI(data);
+    const db = firebase.firestore();
+    friendRequestsUnsubscribe = db.collection('users').doc(uid).collection('friendRequests')
+        .onSnapshot(snapshot => {
+            const requests = [];
+            snapshot.forEach(doc => {
+                requests.push({ id: doc.id, ...doc.data() });
+            });
+
+            const badge = document.getElementById('profile-notif-badge');
+            const container = document.getElementById('pending-friend-requests-container');
+
+            if (requests.length > 0) {
+                badge?.classList.remove('hidden');
+                container?.classList.remove('hidden');
+                
+                container.innerHTML = `
+                    <div style="font-weight:bold; color:var(--duo-blue); margin-bottom:8px;">📩 待處理的好友邀請 (${requests.length})</div>
+                    ${requests.map(req => `
+                        <div class="friend-request-card">
+                            <div style="font-size:0.9rem; color:#374151;"><strong>${req.fromNickname || req.fromEmail}</strong> 想要加你為好友！</div>
+                            <div style="display:flex; gap:8px;">
+                                <button class="btn-3d btn-3d-primary btn-accept-friend" data-id="${req.id}" data-email="${req.fromEmail}" data-nick="${req.fromNickname}" style="flex:1; padding:6px; font-size:0.8rem !important;">接受</button>
+                                <button class="btn-3d btn-3d-secondary btn-reject-friend" data-id="${req.id}" style="flex:1; padding:6px; font-size:0.8rem !important;">拒絕</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+
+                bindFriendRequestActions(uid);
+            } else {
+                badge?.classList.add('hidden');
+                container?.classList.add('hidden');
+                container.innerHTML = '';
+            }
+        });
+}
+
+function bindFriendRequestActions(uid) {
+    const db = firebase.firestore();
+
+    document.querySelectorAll('.btn-accept-friend').forEach(btn => {
+        btn.onclick = async (e) => {
+            const reqId = e.target.getAttribute('data-id');
+            const friendEmail = e.target.getAttribute('data-email');
+            const friendNick = e.target.getAttribute('data-nick');
+
+            // 1. 將好友加入目前用戶的好友清單
+            await db.collection('users').doc(uid).collection('friends').doc(reqId).set({
+                email: friendEmail,
+                nickname: friendNick,
+                addedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // 2. 刪除該筆邀請紀錄
+            await db.collection('users').doc(uid).collection('friendRequests').doc(reqId).delete();
+
+            alert(`已成功接受 ${friendNick || friendEmail} 的好友邀請！`);
+        };
+    });
+
+    document.querySelectorAll('.btn-reject-friend').forEach(btn => {
+        btn.onclick = async (e) => {
+            const reqId = e.target.getAttribute('data-id');
+            await db.collection('users').doc(uid).collection('friendRequests').doc(reqId).delete();
+        };
+    });
 }
 
 function setupNavigationAndModals() {
@@ -301,7 +255,6 @@ function setupNavigationAndModals() {
     const modalLogoutConfirm = document.getElementById('modal-logout-confirm');
     const modalLevelSelect = document.getElementById('modal-select-initial-level');
 
-    // 打卡儀表板
     const streakBtn = document.getElementById('btn-streak-trigger');
     if (streakBtn) {
         streakBtn.onclick = () => {
@@ -319,17 +272,23 @@ function setupNavigationAndModals() {
 
     document.getElementById('btn-cal-prev').onclick = () => {
         viewMonth--;
-        if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+        if (viewMonth < 0) {
+            viewMonth = 11;
+            viewYear--;
+        }
         renderStreakCalendar(currentUserData?.loginHistory || [], viewYear, viewMonth);
     };
 
     document.getElementById('btn-cal-next').onclick = () => {
         viewMonth++;
-        if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+        if (viewMonth > 11) {
+            viewMonth = 0;
+            viewYear++;
+        }
         renderStreakCalendar(currentUserData?.loginHistory || [], viewYear, viewMonth);
     };
 
-    // 程度切換
+    // 切換程度選單 (保留選單顯示，若無權限一樣彈窗提示)
     const levelTrigger = document.getElementById('btn-level-trigger');
     if (levelTrigger) {
         levelTrigger.onclick = () => {
@@ -345,13 +304,21 @@ function setupNavigationAndModals() {
 
     document.getElementById('btn-confirm-initial-level').onclick = () => {
         const selected = document.getElementById('initial-level-select').value;
-        currentSelectedLevel = selected;
-        renderMapUnits(currentCategory, currentSelectedLevel);
-        document.getElementById('lbl-user-level').innerText = selected;
-        modalLevelSelect?.classList.add('hidden');
+        const allowedList = currentUserData?.allowedLevels || ['0A', '1A', '1B', '2A', '2B', '3A', '3B', '4A'];
+
+        if (!allowedList.includes(selected)) {
+            modalLevelSelect?.classList.add('hidden');
+            document.getElementById('lbl-locked-msg').innerText = `您的帳號目前尚未開通 ${selected} 程度權限。如需開通請聯繫後台管理員！`;
+            modalLocked?.classList.remove('hidden');
+        } else {
+            currentSelectedLevel = selected;
+            renderMapUnits(currentCategory, currentSelectedLevel);
+            document.getElementById('lbl-user-level').innerText = selected;
+            document.getElementById('lbl-global-rank-level').innerText = selected;
+            modalLevelSelect?.classList.add('hidden');
+        }
     };
 
-    // 頁籤切換
     const btnProfileTrigger = document.getElementById('btn-profile-trigger');
     const subPageLeaderboard = document.getElementById('sub-page-leaderboard');
     const subPageProfile = document.getElementById('sub-page-profile');
@@ -405,7 +372,48 @@ function setupNavigationAndModals() {
         };
     }
 
-    // 修改暱稱
+    // 發送好友邀請
+    const modalAddFriend = document.getElementById('modal-add-friend');
+    document.getElementById('btn-open-add-friend').onclick = () => {
+        modalAddFriend?.classList.remove('hidden');
+    };
+
+    document.getElementById('btn-cancel-add-friend').onclick = () => {
+        modalAddFriend?.classList.add('hidden');
+    };
+
+    document.getElementById('btn-submit-add-friend').onclick = async () => {
+        const friendEmail = document.getElementById('input-friend-id')?.value.trim();
+        if (!friendEmail) return alert("請輸入好友的 Email！");
+        if (friendEmail === currentUserData.email) return alert("不能新增自己為好友喔！");
+
+        try {
+            const db = firebase.firestore();
+            const targetUserQuery = await db.collection('users').where('email', '==', friendEmail).get();
+
+            if (targetUserQuery.empty) {
+                return alert("找不到該 Email 的使用者，請確認對方已註冊帳號！");
+            }
+
+            const targetDoc = targetUserQuery.docs[0];
+            const targetUid = targetDoc.id;
+
+            // 寫入對方的 friendRequests 集合
+            await db.collection('users').doc(targetUid).collection('friendRequests').doc(currentUserData.uid).set({
+                fromEmail: currentUserData.email,
+                fromNickname: currentUserData.nickname || currentUserData.email.split('@')[0],
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            alert(`已成功向 [${friendEmail}] 發送好友邀請！`);
+            modalAddFriend?.classList.add('hidden');
+            document.getElementById('input-friend-id').value = '';
+        } catch (err) {
+            alert(`發送邀請失敗: ${err.message}`);
+        }
+    };
+
+    // 修改暱稱 Modal
     const modalEditNickname = document.getElementById('modal-edit-nickname');
     document.getElementById('btn-open-edit-nickname').onclick = () => {
         const lastChange = currentUserData?.lastNicknameChange;
@@ -421,9 +429,7 @@ function setupNavigationAndModals() {
         modalEditNickname?.classList.remove('hidden');
     };
 
-    document.getElementById('btn-cancel-nickname').onclick = () => {
-        modalEditNickname?.classList.add('hidden');
-    };
+    document.getElementById('btn-cancel-nickname').onclick = () => modalEditNickname?.classList.add('hidden');
 
     document.getElementById('btn-save-nickname').onclick = async () => {
         const newNick = document.getElementById('input-new-nickname')?.value.trim();
@@ -442,15 +448,10 @@ function setupNavigationAndModals() {
         alert("暱稱修改成功！");
     };
 
-    // 修改密碼
+    // 修改密碼 Modal
     const modalChangePassword = document.getElementById('modal-change-password');
-    document.getElementById('btn-open-change-password').onclick = () => {
-        modalChangePassword?.classList.remove('hidden');
-    };
-
-    document.getElementById('btn-cancel-password').onclick = () => {
-        modalChangePassword?.classList.add('hidden');
-    };
+    document.getElementById('btn-open-change-password').onclick = () => modalChangePassword?.classList.remove('hidden');
+    document.getElementById('btn-cancel-password').onclick = () => modalChangePassword?.classList.add('hidden');
 
     document.getElementById('btn-save-password').onclick = async () => {
         const newPass = document.getElementById('input-new-password')?.value.trim();
@@ -465,38 +466,13 @@ function setupNavigationAndModals() {
         }
     };
 
-    // 新增好友 Modal
-    const modalAddFriend = document.getElementById('modal-add-friend');
-    document.getElementById('btn-open-add-friend').onclick = () => {
-        modalAddFriend?.classList.remove('hidden');
-    };
-
-    document.getElementById('btn-cancel-add-friend').onclick = () => {
-        modalAddFriend?.classList.add('hidden');
-    };
-
-    document.getElementById('btn-submit-add-friend').onclick = async () => {
-        const friendInput = document.getElementById('input-friend-id')?.value.trim();
-        if (!friendInput) return alert("請輸入好友的帳號或暱稱！");
-
-        // 發送邀請示範 logic
-        alert(`已成功發送好友邀請給 [${friendInput}]！`);
-        modalAddFriend?.classList.add('hidden');
-    };
-
-    // 視圖導覽按鈕
     document.getElementById('btn-profile-back-map').onclick = () => {
         profileView?.classList.add('hidden');
         mapView?.classList.remove('hidden');
     };
 
-    document.getElementById('btn-close-locked-modal').onclick = () => {
-        modalLocked?.classList.add('hidden');
-    };
-
-    document.getElementById('btn-close-warmup-ask').onclick = () => {
-        modalWarmupAsk?.classList.add('hidden');
-    };
+    document.getElementById('btn-close-locked-modal').onclick = () => modalLocked?.classList.add('hidden');
+    document.getElementById('btn-close-warmup-ask').onclick = () => modalWarmupAsk?.classList.add('hidden');
 
     document.getElementById('btn-warmup-yes').onclick = () => {
         modalWarmupAsk?.classList.add('hidden');
@@ -514,15 +490,11 @@ function setupNavigationAndModals() {
         mapView?.classList.remove('hidden');
     };
 
-    document.getElementById('btn-trigger-logout').onclick = () => {
-        modalLogoutConfirm?.classList.remove('hidden');
-    };
-
-    document.getElementById('btn-logout-no').onclick = () => {
-        modalLogoutConfirm?.classList.add('hidden');
-    };
+    document.getElementById('btn-trigger-logout').onclick = () => modalLogoutConfirm?.classList.remove('hidden');
+    document.getElementById('btn-logout-no').onclick = () => modalLogoutConfirm?.classList.add('hidden');
 
     document.getElementById('btn-logout-yes').onclick = async () => {
+        if (friendRequestsUnsubscribe) friendRequestsUnsubscribe();
         modalLogoutConfirm?.classList.add('hidden');
         await AuthService.logout();
     };
@@ -578,40 +550,58 @@ function setupAuthEventListeners() {
         if (user) {
             loginModal?.classList.add('hidden');
 
-            // 1. 查詢 Google 試算表 API 白名單
-            const whitelist = await fetchWhitelistData(user.email);
+            let userData = await FirestoreService.getUserData(user.uid);
+            
+            // 🔍 向 Google 試算表查詢最新權限與到期日
+            const sheetPerms = await fetchSheetPermissions(user.email);
+
             const today = new Date().toISOString().split('T')[0];
 
-            if (whitelist && whitelist.expireAt && whitelist.expireAt < today) {
-                alert("您的帳號使用期限已到期！請聯繫後台管理員重新開通。");
-                await AuthService.logout();
-                return;
+            let allowedLevels = ['1A'];
+            let expireAt = '2026-12-31';
+
+            if (sheetPerms) {
+                if (!sheetPerms.active) {
+                    alert("您的帳號已被後台管理員設定為停權狀態！");
+                    await AuthService.logout();
+                    return;
+                }
+                if (sheetPerms.expireAt && sheetPerms.expireAt < today) {
+                    alert("您的帳號使用期限已到期！請聯繫後台管理員續約。");
+                    await AuthService.logout();
+                    return;
+                }
+                allowedLevels = sheetPerms.allowedLevels || ['1A'];
+                expireAt = sheetPerms.expireAt || '2026-12-31';
+            } else if (userData) {
+                allowedLevels = userData.allowedLevels || (userData.allowedLevel ? [userData.allowedLevel] : ['1A']);
+                expireAt = userData.expireAt || '2026-12-31';
             }
 
-            // 2. 獲取 Firestore 用戶紀錄
-            let userData = await FirestoreService.getUserData(user.uid);
             const streakData = checkAndUpdateStreak(userData || {});
 
-            const mergedUserData = {
+            const updatedUserData = {
                 uid: user.uid,
                 email: user.email,
-                nickname: userData?.nickname || whitelist?.nickname || user.email.split('@')[0],
-                allowedLevels: whitelist?.allowedLevels || userData?.allowedLevels || ['1A'],
-                expireAt: whitelist?.expireAt || userData?.expireAt || '2026-12-31',
+                nickname: userData?.nickname || user.email.split('@')[0],
+                allowedLevels: allowedLevels,
+                expireAt: expireAt,
                 xp: userData?.xp || 0,
                 energy: userData?.energy || 100,
                 focusHours: userData?.focusHours || 0.0,
-                friends: userData?.friends || [],
-                friendRequests: userData?.friendRequests || [],
                 ...streakData
             };
 
-            await FirestoreService.saveUserData(user.uid, mergedUserData);
+            await FirestoreService.saveUserData(user.uid, updatedUserData);
 
             mainApp?.classList.remove('hidden');
-            currentSelectedLevel = mergedUserData.allowedLevels[0] || '1A';
-            updateUIProfile(mergedUserData);
+            currentSelectedLevel = allowedLevels[0] || '1A';
+            
+            updateUIProfile(updatedUserData);
             renderMapUnits(currentCategory, currentSelectedLevel);
+
+            // 開啟即時好友邀請監聽
+            listenForFriendRequests(user.uid);
 
         } else {
             loginModal?.classList.remove('hidden');
