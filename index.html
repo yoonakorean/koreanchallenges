@@ -5,12 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>多語種雲端遊戲化學習系統</title>
     
+    <!-- FontAwesome 圖示庫 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+    <!-- Firebase 設定檔 -->
     <script src="js/firebase-config.js"></script>
 
     <style>
@@ -108,7 +111,7 @@
 </head>
 <body>
 
-    <!-- 🔑 1. Google 登入視窗 (取消帳密註冊，白名單嚴格控管) -->
+    <!-- 🔑 1. Google 登入視窗 -->
     <div class="custom-modal" id="login-modal">
         <div class="custom-modal-card">
             <div style="font-size: 2.5rem; color: var(--duo-blue); margin-bottom: 10px;"><i class="fa-solid fa-graduation-cap"></i></div>
@@ -123,11 +126,11 @@
         </div>
     </div>
 
-    <!-- 👤 2. 首次登入 - 設定暱稱 Modal (profileCompleted = false 時觸發) -->
+    <!-- 👤 2. 首次登入 - 設定暱稱 Modal -->
     <div id="modal-setup-nickname" class="custom-modal hidden">
         <div class="custom-modal-card">
             <h3 style="margin-top:0;"><i class="fa-solid fa-user-gear" style="color:var(--duo-blue);"></i> 設定您的學習暱稱</h3>
-            <p style="font-size: 0.95rem; color: #6b7280; margin-bottom: 12px;; line-height: 1.5;">請設定排行榜上顯示的名稱 <br>(2~12字/支援中英韓數/一年僅能修改一次)</p>
+            <p style="font-size: 0.95rem; color: #6b7280; margin-bottom: 12px; line-height: 1.5;">請設定排行榜上顯示的名稱 <br>(2~12字/支援中英韓數/一年僅能修改一次)</p>
             <input type="text" id="input-setup-nickname" placeholder="例如：韓語小霸王" maxlength="12" />
             <div id="nickname-error-msg" style="color: var(--duo-red); font-size: 0.8rem; text-align: left;" class="hidden"></div>
             <button id="btn-save-initial-nickname" class="btn-3d btn-3d-primary" style="width:100%; padding:10px; margin-top:15px;">完成設定並開始學習</button>
@@ -154,12 +157,13 @@
         </div>
     </div>
 
-    <!-- 修改暱稱 Modal -->
+    <!-- 修改暱稱 Modal【修正處：ID 改為 input-edit-nickname 並加入 edit-nickname-error-msg】 -->
     <div id="modal-edit-nickname" class="custom-modal hidden">
         <div class="custom-modal-card">
             <h3 style="margin-top:0;">修改公開暱稱</h3>
             <p style="font-size: 0.8rem; color: #ef4444; margin-bottom: 10px;">⚠️ 注意：暱稱一年僅能修改一次！</p>
-            <input type="text" id="input-new-nickname" placeholder="請輸入新暱稱 (2~12字)" maxlength="12" />
+            <input type="text" id="input-edit-nickname" placeholder="請輸入新暱稱 (2~12字)" maxlength="12" />
+            <div id="edit-nickname-error-msg" style="color: var(--duo-red); font-size: 0.8rem; text-align: left; margin-top: 4px;" class="hidden"></div>
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button id="btn-save-nickname" class="btn-3d btn-3d-primary" style="flex:1; padding:10px;">儲存修改</button>
                 <button id="btn-cancel-nickname" class="btn-3d btn-3d-secondary" style="flex:1; padding:10px;">取消</button>
@@ -201,10 +205,10 @@
         </div>
     </div>
 
-    <!-- 主應用容器 (預設進入 Course Map 學習地圖) -->
+    <!-- 主應用容器 -->
     <div class="app-container hidden" id="main-app">
         
-        <!-- 首頁頂端資訊列（保持乾淨，只顯現暱稱、連續天數、XP、Level） -->
+        <!-- 首頁頂端資訊列 -->
         <div class="user-meta-bar">
             <div class="user-meta-item" id="btn-profile-trigger">
                 <i class="fa-solid fa-user" style="color: var(--duo-blue); font-size: 1.05rem;"></i>
@@ -228,7 +232,7 @@
             </div>
         </div>
 
-        <!-- 視圖 1：首頁 / 課程地圖 (Home / Course Map - 保持原樣) -->
+        <!-- 視圖 1：首頁 / 課程地圖 -->
         <div id="map-view" class="map-container">
             <div id="units-map-list" style="width: 100%; display: flex; flex-direction: column; gap: 16px;"></div>
         </div>
@@ -279,7 +283,7 @@
                 </div>
             </div>
 
-            <!-- 分頁 B：Profile 會員集中管理頁面 (詳細集中於此) -->
+            <!-- 分頁 B：Profile 會員集中管理頁面 -->
             <div id="sub-page-profile" class="unit-card hidden">
                 <div style="text-align: center; border-bottom: 2px solid #f3f4f6; padding-bottom: 15px;">
                     <img id="profile-user-avatar" src="https://via.placeholder.com/72" class="profile-avatar-large" alt="User Avatar">
@@ -290,7 +294,7 @@
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
-                    <div style="display:flex; justify-style:space-between; justify-content: space-between; font-size: 0.9rem;">
+                    <div style="display:flex; justify-content: space-between; font-size: 0.9rem;">
                         <span style="color: #6b7280;">真實姓名：</span>
                         <span id="profile-realname" style="font-weight:bold; color:#374151;">-</span>
                     </div>
@@ -308,7 +312,7 @@
                     <div>
                         <span style="font-size: 0.88rem; font-weight: bold; color: #374151; display: block; margin-bottom: 6px;">已開通課程與到期日：</span>
                         <div id="profile-memberships-list" style="display:flex; flex-direction:column; gap:6px;">
-                            <!-- 動態讀取 memberships Collection -->
+                            <span style="font-size:0.82rem; color:#9ca3af;">載入課程列表中...</span>
                         </div>
                     </div>
 
@@ -334,6 +338,7 @@
         </div>
     </div>
 
+    <!-- 請確保專案目錄下有 JS 檔案，若非 type="module" 請將 type="module" 移除即可 -->
     <script type="module" src="./src/app.js"></script>
 </body>
 </html>
