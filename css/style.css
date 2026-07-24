@@ -1,66 +1,24 @@
-:root {
-    --primary: #4f46e5;
-    --primary-hover: #4338ca;
-    --success: #10b981;
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    --bg: #f3f4f6;
-    --card-bg: #ffffff;
-    --text: #1f2937;
+/* 全域微調 */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #f8f9fa;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
-body { background-color: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+/* 登入 Modal 按鈕動畫效果 */
+#googleAuthBtn:hover {
+  background-color: #f1f3f4;
+  border-color: #dadce0;
+}
 
-.container { width: 100%; max-width: 650px; background: var(--card-bg); border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); padding: 30px; position: relative; }
+/* 輸入框 Focus 質感 */
+.form-floating .form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+}
 
-.user-meta-bar { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; background: #e0e7ff; padding: 10px 15px; border-radius: 10px; margin-bottom: 15px; color: var(--primary-hover); font-weight: 600; }
-.mode-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; color: #fff; font-weight: bold; }
-.mode-practice { background: var(--success); }
-.mode-challenge { background: var(--danger); }
-
-.header { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 15px; }
-.top-row { display: flex; justify-content: space-between; align-items: center; }
-.stages-indicator { display: flex; gap: 8px; }
-.stage-dot { padding: 6px 12px; background: #e5e7eb; border-radius: 20px; font-size: 0.8rem; font-weight: bold; color: #6b7280; transition: all 0.3s; cursor: pointer; }
-.stage-dot.active { background: var(--primary); color: #fff; }
-
-.progress-bar-container { width: 100%; background: #e5e7eb; height: 10px; border-radius: 5px; margin-bottom: 20px; overflow: hidden; position: relative; }
-.progress-bar { height: 100%; background: var(--success); width: 0%; transition: width 0.3s ease; }
-.hp-container { display: flex; gap: 5px; font-size: 1.3rem; color: var(--danger); }
-
-.card-content { text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 25px; min-height: 240px; }
-.target-display { font-size: 1.5rem; font-weight: 700; color: #111827; margin-bottom: 15px; word-break: break-all; white-space: pre-line; }
-
-.puzzle-zone { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; min-height: 120px; width: 100%; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 10px; margin-bottom: 15px; background: #f9fafb; }
-.blocks-pool { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; margin-top: 10px; }
-.word-block { background: #ffffff; border: 2px solid #6366f1; color: #4338ca; padding: 10px 18px; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05); user-select: none; transition: all 0.2s; }
-.word-block:hover { background: #eef2ff; transform: translateY(-2px); }
-.word-block.used { opacity: 0.4; cursor: not-allowed; background: #e2e8f0; border-color: #cbd5e1; color: #94a3b8; }
-
-.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; margin-top: 10px; }
-.option-btn { background: #f9fafb; border: 2px solid #e5e7eb; padding: 14px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.2s; }
-
-.hint-box { background: #eff6ff; border-left: 4px solid var(--primary); color: #1e40af; padding: 18px; border-radius: 12px; text-align: left; width: 100%; margin-top: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
-.hint-box p { line-height: 1.8; margin-bottom: 12px; font-size: 1.05rem; }
-.hint-box p:last-child { margin-bottom: 0; }
-.hint-btn-trigger { background: none; border: none; color: var(--primary); font-weight: 600; cursor: pointer; font-size: 0.95rem; text-decoration: underline; margin-top: 5px; }
-
-.status-msg-container { width: 100%; min-height: 60px; margin-top: 15px; display: flex; justify-content: center; align-items: center; }
-.status-msg { text-align: center; font-size: 1.1rem; width: 100%; margin: 0; padding: 0; min-height: auto; }
-.listening-active { color: var(--danger); animation: pulse 1.2s infinite; font-size: 1.2rem; background: #ffe4e6; padding: 8px; border-radius: 8px; display: inline-block; width: 100%; }
-.btn-action-row { display: flex; gap: 10px; width: 100%; margin-top: 15px; }
-
-button.base-btn { width: 100%; padding: 13px; font-size: 1.05rem; font-weight: bold; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
-.btn-primary { background: var(--primary); color: white; }
-.btn-success { background: var(--success); color: white; }
-.btn-secondary { background: #e5e7eb; color: #4b5563; }
-.btn-danger { background: var(--danger); color: white; }
-
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-.modal-content { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; text-align: center; max-height: 90vh; overflow-y: auto; }
-.modal-content h3 { margin-bottom: 10px; }
-.modal-content input { width: 100%; padding: 12px; margin-bottom: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; }
-
-.hidden { display: none !important; }
-@keyframes pulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+/* 權限 Badge 樣式調整 */
+.badge {
+  font-size: 0.85rem;
+  padding: 0.5em 0.8em;
+  font-weight: 500;
+}
