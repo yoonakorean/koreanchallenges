@@ -1,29 +1,45 @@
+// Firebase Firestore 服務模組
 export const FirestoreService = {
-    db: firebase.firestore(),
+    get db() {
+        return firebase.firestore();
+    },
 
     // 取得使用者資料
     async getUserData(uid) {
-        const doc = await this.db.collection('users').doc(uid).get();
-        return doc.exists ? doc.data() : null;
+        try {
+            const doc = await this.db.collection('users').doc(uid).get();
+            return doc.exists ? doc.data() : null;
+        } catch (error) {
+            console.error("讀取使用者資料失敗:", error);
+            throw error;
+        }
     },
 
-    // 寫入/更新使用者資料
+    // 儲存/更新使用者資料 (同步支援 saveUserData 與 setUserData)
+    async saveUserData(uid, data) {
+        try {
+            return await this.db.collection('users').doc(uid).set(data, { merge: true });
+        } catch (error) {
+            console.error("儲存使用者資料失敗:", error);
+            throw error;
+        }
+    },
+
     async setUserData(uid, data) {
-        return await this.db.collection('users').doc(uid).set(data, { merge: true });
+        return await this.saveUserData(uid, data);
     },
 
-    // 升級：完成關卡時檢查並更新連續登入天數
+    // 檢查並更新連續登入天數 (完成關卡時觸發)
     async checkAndUpdateLoginStreak(uid) {
         const userRef = this.db.collection('users').doc(uid);
         const doc = await userRef.get();
-        if (!doc.exists) return;
+        if (!doc.exists) return 0;
 
         const data = doc.data();
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
         const lastDate = data.lastCompletedDate || "";
 
         if (lastDate === today) {
-            // 今天已經完成過關卡，天數不重複加
             return data.loginDays || 1;
         }
 
@@ -34,7 +50,6 @@ export const FirestoreService = {
             const diffDays = Math.round((now - last) / (1000 * 60 * 60 * 24));
 
             if (diffDays === 1) {
-                // 昨日有完成，連續天數 +1
                 newStreak = (data.loginDays || 0) + 1;
             }
         }
@@ -47,9 +62,8 @@ export const FirestoreService = {
         return newStreak;
     },
 
-    // 發送好友邀請 (修復權限問題)
+    // 發送好友邀請
     async sendFriendRequest(fromUser, toEmail) {
-        // 1. 搜尋目標 Email 的 UID
         const snapshot = await this.db.collection('users').where('email', '==', toEmail).get();
         if (snapshot.empty) {
             throw new Error("找不到該 Email 的使用者！");
@@ -60,7 +74,6 @@ export const FirestoreService = {
             throw new Error("不能新增自己為好友喔！");
         }
 
-        // 2. 建立好友邀請通知
         const requestRef = this.db.collection('friend_requests').doc();
         await requestRef.set({
             requestId: requestRef.id,
