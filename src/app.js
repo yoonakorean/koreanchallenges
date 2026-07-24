@@ -443,8 +443,16 @@ function setupEvents() {
         document.getElementById('modal-logout-confirm')?.classList.add('hidden');
     });
     bindClick('btn-logout-yes', async () => {
+        try {
         await firebase.auth().signOut();
-        location.reload();
+        currentUser = null;
+        currentMemberData = null;
+        userMemberships = [];
+        // 強制重新整理並清空 Session 快取
+        window.location.href = window.location.pathname; 
+    } catch (err) {
+        console.error("登出失敗:", err);
+    }
     });
 }
 
