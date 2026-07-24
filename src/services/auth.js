@@ -12,7 +12,7 @@ import { saveUserData, getUserData } from "./firebase.js";
 const auth = getAuth();
 const googleProvider = new GoogleAuthProvider();
 
-// 1. Google Gmail 帳號連動註冊/登入
+// 1. Google Gmail 快捷登入/註冊
 export async function loginWithGoogle() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
@@ -24,7 +24,7 @@ export async function loginWithGoogle() {
         email: user.email,
         displayName: user.displayName || user.email.split('@')[0],
         language: 'zh-TW',
-        permissions: ['0A'] // 預設新註冊會員權限
+        permissions: ['0A'] // 預設權限
       };
       await saveUserData(user.uid, userData);
     }
@@ -59,7 +59,7 @@ export function logoutUser() {
   return signOut(auth);
 }
 
-// 5. 監聽驗證狀態
+// 5. 監聽身份狀態變更
 export function initAuthListener(onUserChanged) {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
