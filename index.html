@@ -4,19 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>韓語雲端學習系統</title>
+  <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <!-- 自訂樣式檔案路徑修正 -->
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
-  <!-- 頂部導覽列 (完整恢復上一版) -->
-  <nav class="navbar border-bottom sticky-top bg-body-tertiary px-3">
+  <!-- 頂部導覽列 -->
+  <nav class="navbar border-bottom sticky-top bg-body-tertiary px-3 shadow-sm">
     <div class="container-fluid d-flex justify-content-between align-items-center">
-      <a class="navbar-brand fw-bold" href="#">韓語雲端學習系統</a>
+      <a class="navbar-brand fw-bold text-primary" href="#">
+        <i class="bi bi-translate me-2"></i>韓語雲端學習系統
+      </a>
       
       <div class="d-flex align-items-center gap-2">
         <!-- 程度切換選單 (8個完整級別) -->
-        <select id="levelSelect" class="form-select form-select-sm" style="width: auto;">
+        <select id="levelSelect" class="form-select form-select-sm border-primary" style="width: auto;">
           <option value="0A">0A 認識字母</option>
           <option value="1A">1A 基礎級</option>
           <option value="1B">1B 初級</option>
@@ -29,11 +35,13 @@
 
         <!-- 個人資料 / 登入區域 -->
         <div id="userProfileArea" class="d-flex align-items-center gap-2">
-          <button id="loginBtn" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#authModal">登入 / 註冊</button>
+          <button id="loginBtn" class="btn btn-primary btn-sm px-3 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal">
+            <i class="bi bi-person-fill me-1"></i> 登入 / 註冊
+          </button>
           <div id="userInfo" class="d-none d-flex align-items-center gap-2">
-            <span id="userDisplayName" class="fw-bold small"></span>
-            <button id="profileModalBtn" class="btn btn-sm btn-light border" data-bs-toggle="modal" data-bs-target="#profileModal">個人資料</button>
-            <button id="logoutBtn" class="btn btn-sm btn-outline-danger">登出</button>
+            <span id="userDisplayName" class="fw-bold small text-secondary"></span>
+            <button id="profileModalBtn" class="btn btn-sm btn-outline-secondary rounded-pill" data-bs-toggle="modal" data-bs-target="#profileModal">個人資料</button>
+            <button id="logoutBtn" class="btn btn-sm btn-outline-danger rounded-pill">登出</button>
           </div>
         </div>
       </div>
@@ -47,21 +55,80 @@
     </div>
   </main>
 
-  <!-- 個人資料 Modal -->
-  <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">個人資料與設定</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <!-- 漂亮的登入 / 註冊 Modal -->
+  <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        
+        <!-- Modal 頂部設計 -->
+        <div class="modal-header bg-primary text-white border-0 py-3">
+          <h5 class="modal-title fw-bold" id="authModalLabel">
+            <i class="bi bi-person-circle me-2"></i>歡迎回到韓語學習系統
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label fw-bold">帳號 Email</label>
-            <input type="text" id="profileEmail" class="form-value form-control-plaintext" readonly>
+
+        <div class="modal-body p-4">
+          <!-- 1. Google / Gmail 一鍵快捷登入區 -->
+          <div class="d-grid mb-3">
+            <button id="googleAuthBtn" class="btn btn-outline-dark btn-lg d-flex align-items-center justify-content-center gap-2 rounded-3 border-2 py-2 fs-6 fw-bold transition-all shadow-sm">
+              <svg width="20" height="20" viewBox="0 0 48 48">
+                <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+              </svg>
+              使用 Gmail / Google 帳號登入
+            </button>
           </div>
 
-          <!-- 1. 介面語言選擇 (位置移至開通程度權限上方) -->
+          <!-- 分隔線 -->
+          <div class="position-relative text-center my-4">
+            <hr class="text-secondary opacity-25">
+            <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small fw-medium">或使用 Email 帳號</span>
+          </div>
+
+          <!-- 2. Email 輸入表單 -->
+          <form id="authForm">
+            <div class="form-floating mb-3">
+              <input type="email" class="form-control rounded-3" id="authEmail" placeholder="name@example.com" required>
+              <label for="authEmail"><i class="bi bi-envelope me-1"></i>Email 信箱</label>
+            </div>
+            
+            <div class="form-floating mb-4">
+              <input type="password" class="form-control rounded-3" id="authPassword" placeholder="Password" required>
+              <label for="authPassword"><i class="bi bi-lock me-1"></i>密碼</label>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button type="submit" id="emailLoginBtn" class="btn btn-primary btn-lg rounded-3 fs-6 fw-bold shadow-sm">
+                登入帳號
+              </button>
+              <button type="button" id="emailSignUpBtn" class="btn btn-outline-secondary btn-lg rounded-3 fs-6 fw-bold">
+                免費註冊新帳號
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 個人資料 Modal -->
+  <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow rounded-4">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold"><i class="bi bi-gear-fill me-2"></i>個人資料與設定</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">帳號 Email</label>
+            <input type="text" id="profileEmail" class="form-control bg-light border-0 fw-bold" readonly>
+          </div>
+
+          <!-- 1. 介面語言選擇 -->
           <div class="mb-3 border-top pt-3">
             <label for="profileLanguageSelect" class="form-label fw-bold">介面語言選擇</label>
             <select id="profileLanguageSelect" class="form-select">
@@ -75,63 +142,28 @@
           <div class="mb-3 border-top pt-3">
             <label class="form-label fw-bold mb-2">開通程度權限</label>
             <div id="userPermissionsList" class="d-flex flex-wrap gap-2">
-              <span class="badge bg-secondary" id="perm0A">0A 認識字母</span>
-              <span class="badge bg-secondary" id="perm1A">1A 基礎級</span>
-              <span class="badge bg-secondary" id="perm1B">1B 初級</span>
-              <span class="badge bg-secondary" id="perm2A">2A 初中級</span>
-              <span class="badge bg-secondary" id="perm2B">2B 中級</span>
-              <span class="badge bg-secondary" id="perm3A">3A 中高級</span>
-              <span class="badge bg-secondary" id="perm3B">3B 高級</span>
-              <span class="badge bg-secondary" id="perm4A">4A 精通級</span>
+              <span class="badge rounded-pill bg-secondary" id="perm0A">0A 認識字母</span>
+              <span class="badge rounded-pill bg-secondary" id="perm1A">1A 基礎級</span>
+              <span class="badge rounded-pill bg-secondary" id="perm1B">1B 初級</span>
+              <span class="badge rounded-pill bg-secondary" id="perm2A">2A 初中級</span>
+              <span class="badge rounded-pill bg-secondary" id="perm2B">2B 中級</span>
+              <span class="badge rounded-pill bg-secondary" id="perm3A">3A 中高級</span>
+              <span class="badge rounded-pill bg-secondary" id="perm3B">3B 高級</span>
+              <span class="badge rounded-pill bg-secondary" id="perm4A">4A 精通級</span>
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
-          <button type="button" id="saveProfileBtn" class="btn btn-primary">儲存變更</button>
+        <div class="modal-footer border-top-0">
+          <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">關閉</button>
+          <button type="button" id="saveProfileBtn" class="btn btn-primary rounded-pill px-4">儲存變更</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 登入 / 註冊 Modal -->
-  <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">會員登入 / 註冊</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <!-- Gmail 快速連動登入 -->
-          <div class="d-grid mb-3">
-            <button id="googleAuthBtn" class="btn btn-outline-dark d-flex align-items-center justify-content-center gap-2">
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="Google">
-              使用 Gmail / Google 帳號連動登入/註冊
-            </button>
-          </div>
-          <div class="text-center text-muted my-2"><small>或使用 Email 帳號</small></div>
-
-          <form id="authForm">
-            <div class="mb-3">
-              <label for="authEmail" class="form-label">Email 地址</label>
-              <input type="email" class="form-control" id="authEmail" required>
-            </div>
-            <div class="mb-3">
-              <label for="authPassword" class="form-label">密碼</label>
-              <input type="password" class="form-control" id="authPassword" required>
-            </div>
-            <div class="d-grid gap-2">
-              <button type="submit" id="emailLoginBtn" class="btn btn-primary">Email 登入</button>
-              <button type="button" id="emailSignUpBtn" class="btn btn-outline-secondary">Email 註冊</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
+  <!-- 主程式進入點 -->
   <script type="module" src="src/app.js"></script>
 </body>
 </html>
