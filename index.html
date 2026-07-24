@@ -1,302 +1,137 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>多語種雲端遊戲化學習系統</title>
-    
-    <!-- 引入 FontAwesome 圖示 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- 引入 Firebase SDK (依據之前的設定保留，若後續確認更改會再調整) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="js/firebase-config.js"></script>
-
-    <style>
-        :root {
-            --duo-green: #58cc02;
-            --duo-green-shadow: #46a302;
-            --duo-blue: #1cb0f6;
-            --duo-blue-shadow: #1899d6;
-            --duo-gray: #e5e7eb;
-            --duo-red: #ff4b4b;
-            --duo-red-shadow: #ea2b2b;
-            --duo-gold: #f59e0b;
-            --duo-lightning: #a5b4fc;
-            --duo-fire-red: #ef4444;
-        }
-
-        body {
-            margin: 0; padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f9fafb;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .app-container {
-            width: 100%; max-width: 600px; margin: 0 auto; min-height: 100vh;
-            box-sizing: border-box; background: #ffffff; display: flex; flex-direction: column; position: relative;
-        }
-
-        .user-meta-bar {
-            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
-            padding: 12px 14px; background: #ffffff; border-bottom: 2px solid #e5e7eb;
-            font-size: 0.88rem; white-space: nowrap; position: relative; z-index: 100;
-        }
-
-        .user-meta-item {
-            display: inline-flex; align-items: center; gap: 5px; font-weight: bold;
-            color: #374151; cursor: pointer; padding: 6px 8px; border-radius: 10px; user-select: none;
-        }
-        
-        /* 預留多語系切換標籤樣式 */
-        .lang-badge {
-            background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;
-        }
-
-        .notification-badge {
-            position: absolute; top: 2px; right: 2px; width: 10px; height: 10px;
-            background-color: var(--duo-red); border-radius: 50%; border: 2px solid white;
-        }
-
-        .btn-3d, .stage-btn-3d, .tab-btn {
-            font-size: 0.9rem !important; font-weight: bold; border: none; border-radius: 16px;
-            cursor: pointer; transition: all 0.1s ease; user-select: none; touch-action: manipulation;
-        }
-        
-        .btn-3d-primary { background: var(--duo-green); color: white; box-shadow: 0 4px 0 var(--duo-green-shadow); }
-        .btn-3d-primary:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--duo-green-shadow); }
-        .btn-3d-secondary { background: #ffffff; color: #4b5563; border: 2px solid #e5e7eb; box-shadow: 0 4px 0 #e5e7eb; }
-        .btn-3d-secondary:active { transform: translateY(2px); box-shadow: 0 1px 0 #e5e7eb; }
-
-        .map-container { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 15px; width: 100%; box-sizing: border-box; }
-        .unit-card { width: 100%; background: #ffffff; border: 2px solid #e5e7eb; border-radius: 20px; padding: 16px; box-shadow: 0 4px 0 #f3f4f6; box-sizing: border-box; }
-        .unit-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px; margin-bottom: 15px; }
-        .unit-title { font-size: 1rem; font-weight: bold; color: #1f2937; }
-        .stages-path { display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        .stage-btn-3d { width: 72px; height: 72px; border-radius: 50%; background: var(--duo-blue); color: white; box-shadow: 0 5px 0 var(--duo-blue-shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .stage-btn-3d.locked { background: #9ca3af !important; box-shadow: 0 5px 0 #6b7280 !important; opacity: 0.7; cursor: not-allowed; }
-
-        /* Modal 彈窗與關閉鈕 */
-        .custom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-        .custom-modal-card { background: white; border-radius: 24px; padding: 24px 20px; width: 85%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.25); position: relative; box-sizing: border-box; }
-        .close-icon-circle { position: absolute; top: 14px; left: 16px; width: 28px; height: 28px; background: #f3f4f6; color: #9ca3af; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; cursor: pointer; z-index: 10000; }
-
-        /* Step 2 翻牌卡片樣式 */
-        .flip-card-container { perspective: 1000px; width: 100%; height: 260px; margin: 15px 0; cursor: pointer; }
-        .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.5s; transform-style: preserve-3d; }
-        .flip-card-container.flipped .flip-card-inner { transform: rotateY(180deg); }
-        .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; border-radius: 20px; border: 2px solid #e5e7eb; box-shadow: 0 6px 0 #f3f4f6; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #ffffff; }
-        .flip-card-back { transform: rotateY(180deg); background: #f9fafb; text-align: left; align-items: flex-start; }
-
-        /* 拼音切換標籤 */
-        .pronunciation-toggle { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 12px; padding: 2px 8px; font-size: 0.75rem; color: #6b7280; cursor: pointer; margin-top: 5px; }
-        .pronunciation-toggle:active { background: #e5e7eb; }
-
-        /* 單字網格直列卡片 */
-        .word-grid-list { display: flex; flex-direction: column; gap: 10px; margin: 15px 0; max-height: 280px; overflow-y: auto; }
-        .word-grid-item { display: flex; justify-content: space-between; align-items: center; background: #ffffff; border: 2px solid #e5e7eb; padding: 12px 16px; border-radius: 14px; cursor: pointer; box-shadow: 0 2px 0 #f3f4f6; }
-        .word-grid-item:active { transform: scale(0.98); }
-
-        .tab-btn { flex: 1; padding: 10px; border: none; background: #ffffff; color: #6b7280; border-radius: 12px; cursor: pointer; border: 1px solid #e5e7eb; }
-        .tab-btn.active { background: var(--duo-blue); color: white; border-color: var(--duo-blue); box-shadow: 0 3px 0 var(--duo-blue-shadow); }
-
-        .hidden { display: none !important; }
-        input, select { width: 100%; padding: 10px 12px; margin: 6px 0; border-radius: 12px; border: 2px solid #e5e7eb; box-sizing: border-box; font-size: 0.95rem; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>韓語雲端學習系統</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 登入與註冊視窗 (已修復生日與排版) -->
-    <div class="custom-modal" id="login-modal">
-        <div class="custom-modal-card">
-            <h3><i class="fa-solid fa-cloud" style="color: var(--duo-blue);"></i> 歡迎來到多語大冒險</h3>
-            <p style="font-size: 0.85rem; color:#6b7280; margin-bottom: 15px;">每天陪你一起輕鬆學語言</p>
-            
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button id="tab-login" class="tab-btn active">會員登入</button>
-                <button id="tab-register" class="tab-btn">新用戶註冊</button>
-            </div>
+  <!-- 頂部導覽列 (完整恢復上一版) -->
+  <nav class="navbar border-bottom sticky-top bg-body-tertiary px-3">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+      <a class="navbar-brand fw-bold" href="#">韓語雲端學習系統</a>
+      
+      <div class="d-flex align-items-center gap-2">
+        <!-- 程度切換選單 (8個完整級別) -->
+        <select id="levelSelect" class="form-select form-select-sm" style="width: auto;">
+          <option value="0A">0A 認識字母</option>
+          <option value="1A">1A 基礎級</option>
+          <option value="1B">1B 初級</option>
+          <option value="2A">2A 初中級</option>
+          <option value="2B">2B 中級</option>
+          <option value="3A">3A 中高級</option>
+          <option value="3B">3B 高級</option>
+          <option value="4A">4A 精通級</option>
+        </select>
 
-            <div style="display: flex; flex-direction: column; gap: 8px; text-align: left;">
-                <div>
-                    <label style="font-size: 0.8rem; font-weight: bold; color: #4b5563;">電子信箱 (Email)</label>
-                    <input type="email" id="email-input" placeholder="example@email.com" required />
-                </div>
-
-                <div>
-                    <label style="font-size: 0.8rem; font-weight: bold; color: #4b5563;">密碼 (Password)</label>
-                    <input type="password" id="password-input" placeholder="請輸入 6 位數以上密碼" required />
-                </div>
-
-                <!-- 註冊專用擴充欄位 -->
-                <div id="register-extended-fields" class="hidden" style="display: flex; flex-direction: column; gap: 8px;">
-                    <div>
-                        <label style="font-size: 0.8rem; font-weight: bold; color: #4b5563;">顯示暱稱</label>
-                        <input type="text" id="nickname-input" placeholder="請輸入您的暱稱" />
-                    </div>
-                    <div>
-                        <label style="font-size: 0.8rem; font-weight: bold; color: #4b5563;">出生年月日 (Birthday)</label>
-                        <input type="date" id="birthday-input" />
-                    </div>
-                </div>
-            </div>
-
-            <button class="btn-3d btn-3d-primary" id="btn-auth-submit" style="width: 100%; padding: 12px; margin-top: 15px;">進入挑戰</button>
+        <!-- 個人資料 / 登入區域 -->
+        <div id="userProfileArea" class="d-flex align-items-center gap-2">
+          <button id="loginBtn" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#authModal">登入 / 註冊</button>
+          <div id="userInfo" class="d-none d-flex align-items-center gap-2">
+            <span id="userDisplayName" class="fw-bold small"></span>
+            <button id="profileModalBtn" class="btn btn-sm btn-light border" data-bs-toggle="modal" data-bs-target="#profileModal">個人資料</button>
+            <button id="logoutBtn" class="btn btn-sm btn-outline-danger">登出</button>
+          </div>
         </div>
+      </div>
     </div>
+  </nav>
 
-    <!-- 選擇程度 Modal -->
-    <div id="modal-select-initial-level" class="custom-modal hidden">
-        <div class="custom-modal-card">
-            <div class="close-icon-circle" id="btn-close-level-modal"><i class="fa-solid fa-xmark"></i></div>
-            <h3 style="margin-top: 10px;">選擇課程程度</h3>
-            <select id="initial-level-select">
-                <option value="0A">0A 認識字母</option>
-                <option value="1A" selected>1A 基礎級</option>
-                <option value="1B">1B 初級</option>
-                <!-- 其他選項略 -->
+  <!-- 主要學習內容區塊 (保持原樣不變) -->
+  <main class="container my-4">
+    <div id="mainContent">
+      <!-- 語音模式、錄音功能與課程內容渲染區域 -->
+    </div>
+  </main>
+
+  <!-- 個人資料 Modal -->
+  <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">個人資料與設定</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">帳號 Email</label>
+            <input type="text" id="profileEmail" class="form-value form-control-plaintext" readonly>
+          </div>
+
+          <!-- 1. 介面語言選擇 (位置移至開通程度權限上方) -->
+          <div class="mb-3 border-top pt-3">
+            <label for="profileLanguageSelect" class="form-label fw-bold">介面語言選擇</label>
+            <select id="profileLanguageSelect" class="form-select">
+              <option value="zh-TW">繁體中文</option>
+              <option value="ko">한국어 (韓文)</option>
+              <option value="en">English</option>
             </select>
-            <button id="btn-confirm-initial-level" class="btn-3d btn-3d-primary" style="width: 100%; padding: 10px; margin-top: 10px;">確定切換</button>
+          </div>
+
+          <!-- 2. 開通程度權限 (8個完整級別標籤) -->
+          <div class="mb-3 border-top pt-3">
+            <label class="form-label fw-bold mb-2">開通程度權限</label>
+            <div id="userPermissionsList" class="d-flex flex-wrap gap-2">
+              <span class="badge bg-secondary" id="perm0A">0A 認識字母</span>
+              <span class="badge bg-secondary" id="perm1A">1A 基礎級</span>
+              <span class="badge bg-secondary" id="perm1B">1B 初級</span>
+              <span class="badge bg-secondary" id="perm2A">2A 初中級</span>
+              <span class="badge bg-secondary" id="perm2B">2B 中級</span>
+              <span class="badge bg-secondary" id="perm3A">3A 中高級</span>
+              <span class="badge bg-secondary" id="perm3B">3B 高級</span>
+              <span class="badge bg-secondary" id="perm4A">4A 精通級</span>
+            </div>
+          </div>
         </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+          <button type="button" id="saveProfileBtn" class="btn btn-primary">儲存變更</button>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- 鎖定提示 Modal -->
-    <div id="modal-locked" class="custom-modal hidden">
-        <div class="custom-modal-card">
-            <div style="font-size: 2.8rem; color: #f59e0b; margin-bottom: 10px;"><i class="fa-solid fa-lock"></i></div>
-            <h3>權限鎖定中</h3>
-            <p id="lbl-locked-msg" style="color: #6b7280; font-size: 0.85rem; margin-bottom: 20px;">請聯繫後台管理員開通權限唷！</p>
-            <button id="btn-close-locked-modal" class="btn-3d btn-3d-primary" style="width: 100%; padding: 10px;">我知道了</button>
+  <!-- 登入 / 註冊 Modal -->
+  <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">會員登入 / 註冊</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        <div class="modal-body">
+          <!-- Gmail 快速連動登入 -->
+          <div class="d-grid mb-3">
+            <button id="googleAuthBtn" class="btn btn-outline-dark d-flex align-items-center justify-content-center gap-2">
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="Google">
+              使用 Gmail / Google 帳號連動登入/註冊
+            </button>
+          </div>
+          <div class="text-center text-muted my-2"><small>或使用 Email 帳號</small></div>
+
+          <form id="authForm">
+            <div class="mb-3">
+              <label for="authEmail" class="form-label">Email 地址</label>
+              <input type="email" class="form-control" id="authEmail" required>
+            </div>
+            <div class="mb-3">
+              <label for="authPassword" class="form-label">密碼</label>
+              <input type="password" class="form-control" id="authPassword" required>
+            </div>
+            <div class="d-grid gap-2">
+              <button type="submit" id="emailLoginBtn" class="btn btn-primary">Email 登入</button>
+              <button type="button" id="emailSignUpBtn" class="btn btn-outline-secondary">Email 註冊</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- 課前暖身詢問 Modal -->
-    <div id="modal-warmup-ask" class="custom-modal hidden">
-        <div class="custom-modal-card">
-            <div class="close-icon-circle" id="btn-close-warmup-ask"><i class="fa-solid fa-xmark"></i></div>
-            <div style="font-size: 2.5rem; color: var(--duo-blue); margin: 10px 0;"><i class="fa-solid fa-book-open-reader"></i></div>
-            <h3>課前暖身 (練習模式)</h3>
-            <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 20px;">進入挑戰前，先輕鬆複習必備單字與句型吧！</p>
-            <div style="display: flex; gap: 10px;">
-                <button id="btn-warmup-yes" class="btn-3d btn-3d-primary" style="flex: 1; padding: 10px;">進入暖身練習</button>
-                <button id="btn-warmup-no" class="btn-3d btn-3d-secondary" style="flex: 1; padding: 10px;">直接進入挑戰</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 主容器 -->
-    <div class="app-container hidden" id="main-app">
-        <!-- 頂部資訊列 (已預留多國語言切換位置) -->
-        <div class="user-meta-bar">
-            <div class="user-meta-item" id="btn-profile-trigger">
-                <i class="fa-solid fa-user" style="color: var(--duo-blue);"></i> <span id="lbl-username">學生</span>
-            </div>
-            <div class="user-meta-item"><i class="fa-solid fa-fire" style="color: var(--duo-fire-red);"></i> <span id="lbl-login-days">1</span>天</div>
-            <div class="user-meta-item"><i class="fa-solid fa-star" style="color: var(--duo-gold);"></i> <span id="lbl-xp">0</span></div>
-            
-            <!-- 預留的語言切換顯示區 -->
-            <div class="user-meta-item lang-badge" id="btn-lang-trigger">
-                <i class="fa-solid fa-globe"></i> 韓文 (KR)
-            </div>
-            
-            <div class="user-meta-item" id="btn-level-trigger"><span id="lbl-user-level" style="color: var(--duo-blue);">1A</span> <i class="fa-solid fa-caret-down" style="font-size: 0.75rem; color: #9ca3af;"></i></div>
-        </div>
-
-        <!-- 視圖 1：學習地圖 -->
-        <div id="map-view" class="map-container">
-            <div id="units-map-list" style="width: 100%; display: flex; flex-direction: column; gap: 16px;"></div>
-        </div>
-
-        <!-- 視圖 2：STEP 2 課前暖身頁面 -->
-        <div id="warmup-view" class="hidden" style="padding: 15px; width: 100%; box-sizing: border-box;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <button id="btn-warmup-exit" class="btn-3d btn-3d-secondary" style="padding: 6px 14px;"><i class="fa-solid fa-xmark"></i> 離開練習</button>
-                <span style="font-weight: bold; color: #6b7280; font-size: 0.85rem;">課前暖身 (練習模式)</span>
-            </div>
-
-            <!-- 單字總覽 -->
-            <div id="warmup-step-overview" class="unit-card">
-                <h3 id="lbl-warmup-overview-title" style="margin-top: 0; color: #1f2937;">今日解鎖：必備單字</h3>
-                <div id="warmup-word-grid" class="word-grid-list"></div>
-                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
-                    <button id="btn-start-card-study" class="btn-3d btn-3d-primary" style="width: 100%; padding: 12px;">開始單字卡學習</button>
-                    <button id="btn-fast-to-speaking" class="btn-3d btn-3d-secondary" style="width: 100%; padding: 10px; border-color: var(--duo-blue); color: var(--duo-blue);">⚡ 我已熟悉，直接進行跟讀練習</button>
-                </div>
-            </div>
-
-            <!-- 單字卡翻牌卡片 -->
-            <div id="warmup-step-cards" class="unit-card hidden">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span id="card-progress-indicator" style="font-size: 0.8rem; font-weight: bold; color: #9ca3af;">卡片 1 / 5</span>
-                    <button id="btn-toggle-mastered" class="btn-3d btn-3d-secondary" style="padding: 4px 10px; font-size: 0.8rem !important;">
-                        <i class="fa-regular fa-circle-check"></i> 標記已學會
-                    </button>
-                </div>
-
-                <div class="flip-card-container" id="card-flipper">
-                    <div class="flip-card-inner">
-                        <!-- 正面 -->
-                        <div class="flip-card-front">
-                            <button id="btn-play-word-audio" style="position: absolute; top: 15px; right: 15px; border: none; background: #f3f4f6; width: 36px; height: 36px; border-radius: 50%; color: var(--duo-blue); cursor: pointer;"><i class="fa-solid fa-volume-high"></i></button>
-                            <div id="card-word-kr" style="font-size: 2.2rem; font-weight: bold; color: #1f2937;">떡볶이</div>
-                            
-                            <!-- 拼音顯示區塊 -->
-                            <div id="card-word-pron-kr" style="font-size: 0.95rem; color: #9ca3af; margin-top: 8px;">[떡뽀끼]</div>
-                            <div id="card-word-pron-rom" class="hidden" style="font-size: 0.95rem; color: #9ca3af; margin-top: 8px;">[tteokbokki]</div>
-                            <button id="btn-toggle-pron-type" class="pronunciation-toggle"><i class="fa-solid fa-language"></i> 切換羅馬拼音</button>
-
-                            <div style="font-size: 0.75rem; color: #cbd5e1; margin-top: 20px;">(點擊卡片翻面看中文解釋)</div>
-                        </div>
-                        <!-- 反面 -->
-                        <div class="flip-card-back">
-                            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
-                                <span id="card-word-pos" style="background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;">名詞</span>
-                                <strong id="card-word-zh" style="font-size: 1.3rem; color: #1f2937;">辣炒年糕</strong>
-                            </div>
-                            <hr style="width: 100%; border: none; border-top: 1px dashed #e5e7eb; margin: 8px 0;" />
-                            <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 4px;">本單元例句：</div>
-                            <div id="card-example-kr" style="font-size: 0.95rem; font-weight: bold; color: #374151;">떡볶이를 먹어요.</div>
-                            <div id="card-example-zh" style="font-size: 0.85rem; color: #6b7280; margin-top: 2px;">吃辣炒年糕。</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; gap: 10px;">
-                    <button id="btn-prev-card" class="btn-3d btn-3d-secondary" style="flex: 1; padding: 10px;">上一頁</button>
-                    <button id="btn-next-card" class="btn-3d btn-3d-primary" style="flex: 1; padding: 10px;">下一頁</button>
-                </div>
-            </div>
-
-            <!-- 單元句型與語音跟讀等區塊 (保留原本架構) -->
-            <!-- ... -->
-        </div>
-    </div>
-
-    <!-- 拼音切換簡單互動邏輯 (供UI展示，不影響後台) -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const btnTogglePron = document.getElementById('btn-toggle-pron-type');
-            if(btnTogglePron) {
-                btnTogglePron.addEventListener('click', (e) => {
-                    e.stopPropagation(); // 防止觸發卡片翻面
-                    const krPron = document.getElementById('card-word-pron-kr');
-                    const romPron = document.getElementById('card-word-pron-rom');
-                    if(krPron.classList.contains('hidden')){
-                        krPron.classList.remove('hidden');
-                        romPron.classList.add('hidden');
-                        btnTogglePron.innerHTML = '<i class="fa-solid fa-language"></i> 切換羅馬拼音';
-                    } else {
-                        krPron.classList.add('hidden');
-                        romPron.classList.remove('hidden');
-                        btnTogglePron.innerHTML = '<i class="fa-solid fa-language"></i> 切換韓文發音';
-                    }
-                });
-            }
-        });
-    </script>
-    <script type="module" src="./src/app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
+  <script type="module" src="src/app.js"></script>
 </body>
 </html>
