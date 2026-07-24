@@ -106,7 +106,7 @@ async function syncUserToFirestore(authUser, gasMember, gasMemberships) {
 
     const now = firebase.firestore.FieldValue.serverTimestamp();
 
-    if (!docSnap.exists()) {
+    if (!docSnap.exists) {
         const newMember = {
             uid: authUser.uid,
             email: authUser.email,
@@ -455,7 +455,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
         const db = firebase.firestore();
         const docSnap = await db.collection('members').doc(user.uid).get();
 
-        if (docSnap.exists()) {
+        if (docSnap.exists) {
             currentMemberData = docSnap.data();
             const shipsSnap = await db.collection('memberships').where('uid', '==', user.uid).get();
             userMemberships = shipsSnap.docs.map(doc => doc.data());
