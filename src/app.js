@@ -161,7 +161,9 @@ function updateHomeMetaBar() {
 
 // 👤 更新 Profile（我的帳號）詳細資料頁面
 function updateProfileView() {
-    document.getElementById('profile-user-avatar').src = currentMemberData.photoURL || "https://via.placeholder.com/72";
+    const defaultAvatar = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72"><rect width="72" height="72" fill="%23E2E8F0"/><circle cx="36" cy="28" r="14" fill="%2394A3B8"/><path d="M14 60c0-12 10-18 22-18s22 6 22 18" fill="%2394A3B8"/></svg>';
+
+    document.getElementById('profile-user-avatar').src = currentMemberData.photoURL || defaultAvatar;
     document.getElementById('profile-nickname').innerText = currentMemberData.nickname || '學生';
     document.getElementById('profile-email').innerText = currentMemberData.email || '';
     document.getElementById('profile-realname').innerText = currentMemberData.realName || '-';
