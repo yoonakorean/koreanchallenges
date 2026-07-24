@@ -71,7 +71,7 @@ async function syncUserToFirestore(authUser, gasMember, gasMemberships) {
 
     const now = firebase.firestore.FieldValue.serverTimestamp();
 
-    if (!docSnap.exists()) {
+    if (!docSnap.exists) {
         // 第一次登入：建立 Member 基本檔案 (profileCompleted = false)
         const newMember = {
             uid: authUser.uid,
