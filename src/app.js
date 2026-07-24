@@ -13,7 +13,7 @@ function validateNickname(nickname) {
     return regex.test(nickname);
 }
 
-// 檢查暱稱是否在一年的冷卻期內（true 代表可修改，false 代表不可修改）
+// 檢查暱稱是否在一年的冷卻期內
 function canChangeNickname(lastChangeDateStr) {
     if (!lastChangeDateStr) return true;
     const lastDate = new Date(lastChangeDateStr);
@@ -35,7 +35,7 @@ async function fetchGASWhitelist(email) {
 
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 秒超時保護
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         const response = await fetch(`${GAS_API_URL}?email=${encodeURIComponent(email)}`, {
             signal: controller.signal
@@ -52,6 +52,7 @@ async function fetchGASWhitelist(email) {
 
 // Google Sign-In 登入流程
 async function handleGoogleLogin() {
+    console.log("🔍 [DEBUG] 觸發 handleGoogleLogin()");
     const errorDiv = document.getElementById('login-error-msg');
     const loginBtn = document.getElementById('btn-google-login');
 
@@ -60,9 +61,11 @@ async function handleGoogleLogin() {
 
     try {
         const provider = new firebase.auth.GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' }); // 強制讓使用者選擇帳號
+        provider.setCustomParameters({ prompt: 'select_account' });
 
+        console.log("🔍 [DEBUG] 開始執行 signInWithPopup...");
         const result = await firebase.auth().signInWithPopup(provider);
+        console.log("✅ [DEBUG] signInWithPopup 成功:", result.user);
         const user = result.user;
 
         // 1. 查詢 GAS 白名單
@@ -81,7 +84,11 @@ async function handleGoogleLogin() {
         await syncUserToFirestore(user, gasResult.member, gasResult.memberships);
 
     } catch (err) {
-        console.error("Google 登入失敗:", err);
+        // 🎯 問題 A 關鍵偵錯：印出最真實的 Error Code 與 Message
+        console.error("❌ [DEBUG] Google 登入失敗捕獲之完整 Error 物件:", err);
+        console.error("❌ [DEBUG] Error Code:", err.code);
+        console.error("❌ [DEBUG] Error Message:", err.message);
+
         if (errorDiv && err.code !== 'auth/popup-closed-by-user') {
             errorDiv.innerText = `登入失敗: ${err.message}`;
             errorDiv.classList.remove('hidden');
@@ -138,7 +145,6 @@ async function syncUserToFirestore(authUser, gasMember, gasMemberships) {
         currentMemberData = { ...existingData, ...updatedFields };
     }
 
-    // 同步更新 memberships Collection
     if (Array.isArray(gasMemberships)) {
         for (const ship of gasMemberships) {
             const shipId = `${authUser.uid}_${ship.courseId}`;
@@ -175,7 +181,6 @@ function launchMainApp() {
     listenForFriendRequests(currentMemberData.uid);
 }
 
-// 更新首頁頂端資訊列
 function updateHomeMetaBar() {
     const lblName = document.getElementById('lbl-username');
     const lblDays = document.getElementById('lbl-login-days');
@@ -188,7 +193,6 @@ function updateHomeMetaBar() {
     if (lblLevel) lblLevel.innerText = currentSelectedLevel;
 }
 
-// 更新 Profile 頁面資料
 function updateProfileView() {
     const avatarImg = document.getElementById('profile-user-avatar');
     if (avatarImg) {
@@ -242,7 +246,6 @@ function renderCourseMap() {
         </div>
     `;
 
-    // 關卡點擊事件綁定
     container.querySelectorAll('.stage-btn-3d').forEach(btn => {
         btn.onclick = () => {
             if (btn.classList.contains('locked')) {
@@ -270,19 +273,22 @@ function listenForFriendRequests(uid) {
         });
 }
 
-// 🎯 全域安全事件綁定 Helper
+// 🎯 全域安全事件綁定 Helper（加入問題 B 除錯輸出）
 function bindClick(elementId, handler) {
     const el = document.getElementById(elementId);
     if (el) {
         el.onclick = handler;
+        console.log(`✅ [DEBUG] 按鈕事件綁定成功: ID = "${elementId}"`);
+    } else {
+        console.error(`❌ [DEBUG] 按鈕事件綁定失敗 (找不到 DOM 元素): ID = "${elementId}"`);
     }
 }
 
 function setupEvents() {
-    // 登入按鈕
+    console.log("🔍 [DEBUG] setupEvents() 被呼叫執行，當前 readyState =", document.readyState);
+
     bindClick('btn-google-login', handleGoogleLogin);
 
-    // 首次設定暱稱儲存
     bindClick('btn-save-initial-nickname', async () => {
         const inputEl = document.getElementById('input-setup-nickname');
         const input = inputEl ? inputEl.value.trim() : '';
@@ -321,7 +327,6 @@ function setupEvents() {
         launchMainApp();
     });
 
-    // 設定/個人頁面 - 暱稱修改儲存按鈕處理
     bindClick('btn-save-nickname', async () => {
         const inputEl = document.getElementById('input-edit-nickname');
         const input = inputEl ? inputEl.value.trim() : '';
@@ -367,7 +372,6 @@ function setupEvents() {
         updateProfileView();
     });
 
-    // 頁面切換相關
     bindClick('btn-profile-trigger', () => {
         document.getElementById('map-view')?.classList.add('hidden');
         document.getElementById('profile-view')?.classList.remove('hidden');
@@ -397,7 +401,6 @@ function setupEvents() {
         document.getElementById('map-view')?.classList.remove('hidden');
     });
 
-    // 個人主頁標籤頁切換
     bindClick('btn-view-leaderboard', () => {
         document.getElementById('btn-view-leaderboard')?.classList.add('active');
         document.getElementById('btn-view-profile')?.classList.remove('active');
@@ -413,7 +416,6 @@ function setupEvents() {
         updateProfileView();
     });
 
-    // Modal 開啟/關閉
     bindClick('btn-open-edit-nickname', () => {
         const inputEl = document.getElementById('input-edit-nickname');
         if (inputEl) inputEl.value = currentMemberData?.nickname || '';
@@ -434,7 +436,6 @@ function setupEvents() {
         document.getElementById('modal-locked')?.classList.add('hidden');
     });
 
-    // 登出流程
     bindClick('btn-trigger-logout', () => {
         document.getElementById('modal-logout-confirm')?.classList.remove('hidden');
     });
@@ -447,8 +448,8 @@ function setupEvents() {
     });
 }
 
-// 啟動與監聽 Firebase 驗證狀態
 firebase.auth().onAuthStateChanged(async (user) => {
+    console.log("🔍 [DEBUG] onAuthStateChanged 觸發, user =", user ? user.uid : null);
     if (user) {
         currentUser = user;
         const db = firebase.firestore();
@@ -474,5 +475,5 @@ firebase.auth().onAuthStateChanged(async (user) => {
     }
 });
 
-// 初始化 Event Listener
+// 執行事件綁定
 setupEvents();
