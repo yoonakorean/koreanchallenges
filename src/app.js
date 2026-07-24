@@ -1,142 +1,133 @@
-import { AuthService } from './services/auth.js';
-import { FirestoreService } from './services/firebase.js';
+import { loginWithGoogle, loginWithEmail, signUpWithEmail, logoutUser, initAuthListener } from "./services/auth.js";
+import { saveUserData } from "./services/firebase.js";
 
 let currentUser = null;
-let isRegisterMode = false;
+let currentUserData = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-    initApp();
+// 防錯 DOM 事件綁定
+function safeAddListener(id, event, callback) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener(event, callback);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. Google Gmail 快速連動登入
+  safeAddListener("googleAuthBtn", "click", async () => {
+    try {
+      await loginWithGoogle();
+      hideModal("authModal");
+    } catch (err) {
+      alert("Google 登入失敗：" + err.message);
+    }
+  });
+
+  // 2. 程度切換選單邏輯 (完整支援 8 個級別驗證)
+  safeAddListener("levelSelect", "change", (e) => {
+    const selectedLevel = e.target.value;
+    
+    if (currentUserData && currentUserData.permissions) {
+      if (!currentUserData.permissions.includes(selectedLevel)) {
+        alert(`您的帳號尚未開通【${selectedLevel}】級別的閱讀權限！`);
+        e.target.value = currentUserData.permissions[0] || "0A";
+        return;
+      }
+    }
+    
+    console.log(`已切換學習程度至：${selectedLevel}`);
+    // 自動載入該程度之單字/文法與語音模式 (維持原本邏輯)
+  });
+
+  // 3. 個人資料 - 語言選擇與設定儲存
+  safeAddListener("saveProfileBtn", "click", async () => {
+    if (!currentUser) return;
+    const lang = document.getElementById("profileLanguageSelect").value;
+    
+    if (currentUserData) {
+      currentUserData.language = lang;
+      await saveUserData(currentUser.uid, currentUserData);
+      alert("個人設定儲存成功！");
+      hideModal("profileModal");
+    }
+  });
+
+  // 4. Email 表單登入/註冊
+  safeAddListener("authForm", "submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("authEmail").value;
+    const pwd = document.getElementById("authPassword").value;
+    try {
+      await loginWithEmail(email, pwd);
+      hideModal("authModal");
+    } catch (err) {
+      alert("登入失敗：" + err.message);
+    }
+  });
+
+  safeAddListener("emailSignUpBtn", "click", async () => {
+    const email = document.getElementById("authEmail").value;
+    const pwd = document.getElementById("authPassword").value;
+    if (!email || !pwd) return alert("請填寫 Email 與密碼");
+    try {
+      await signUpWithEmail(email, pwd);
+      alert("註冊成功！");
+      hideModal("authModal");
+    } catch (err) {
+      alert("註冊失敗：" + err.message);
+    }
+  });
+
+  // 5. 登出
+  safeAddListener("logoutBtn", "click", () => {
+    logoutUser().then(() => alert("已成功登出"));
+  });
+
+  // 6. 身份驗證監聽與畫面更新
+  initAuthListener((user, userData) => {
+    currentUser = user;
+    currentUserData = userData;
+
+    const loginBtn = document.getElementById("loginBtn");
+    const userInfo = document.getElementById("userInfo");
+    const userDisplayName = document.getElementById("userDisplayName");
+    const profileEmail = document.getElementById("profileEmail");
+    const profileLangSelect = document.getElementById("profileLanguageSelect");
+
+    if (user) {
+      if (loginBtn) loginBtn.classList.add("d-none");
+      if (userInfo) userInfo.classList.remove("d-none");
+      if (userDisplayName) userDisplayName.textContent = user.displayName || user.email;
+      if (profileEmail) profileEmail.value = user.email;
+      if (profileLangSelect && userData) profileLangSelect.value = userData.language || "zh-TW";
+      
+      // 更新 8 個級別權限標籤顯示
+      updatePermissionsUI(userData ? userData.permissions : ['0A']);
+    } else {
+      if (loginBtn) loginBtn.classList.remove("d-none");
+      if (userInfo) userInfo.classList.add("d-none");
+    }
+  });
 });
 
-function initApp() {
-    setupAuthListeners();
-    setupNavigationAndModals();
+// 隱藏 Modal Helper
+function hideModal(modalId) {
+  const el = document.getElementById(modalId);
+  if (el) {
+    const modal = bootstrap.Modal.getInstance(el);
+    if (modal) modal.hide();
+  }
 }
 
-// 設置 DOM 事件安全綁定 (加強判斷，防止 null 報錯中斷網頁)
-function safeAddEventListener(id, event, handler) {
-    const el = document.getElementById(id);
-    if (el) {
-        el.addEventListener(event, handler);
+// 8 個級別權限標籤顏色高亮
+function updatePermissionsUI(permissions = []) {
+  const levels = ["0A", "1A", "1B", "2A", "2B", "3A", "3B", "4A"];
+  levels.forEach(lvl => {
+    const badge = document.getElementById(`perm${lvl}`);
+    if (badge) {
+      if (permissions.includes(lvl)) {
+        badge.className = "badge bg-success";
+      } else {
+        badge.className = "badge bg-secondary";
+      }
     }
-}
-
-// 驗證狀態監聽與 UI 切換
-function setupAuthListeners() {
-    AuthService.onAuthStateChanged(async (user) => {
-        const loginModal = document.getElementById('login-modal');
-        const mainApp = document.getElementById('main-app');
-
-        if (user) {
-            try {
-                const userData = await FirestoreService.getUserData(user.uid);
-                currentUser = userData || { uid: user.uid, email: user.email, nickname: "學習者", xp: 0, loginDays: 0, currentLevel: "1A" };
-                
-                updateUserUI(currentUser);
-                
-                if (loginModal) loginModal.classList.add('hidden');
-                if (mainApp) mainApp.classList.remove('hidden');
-            } catch (err) {
-                console.error("讀取使用者檔失敗:", err);
-            }
-        } else {
-            currentUser = null;
-            if (loginModal) loginModal.classList.remove('hidden');
-            if (mainApp) mainApp.classList.add('hidden');
-        }
-    });
-}
-
-// 更新頂部資訊列
-function updateUserUI(data) {
-    const lblUsername = document.getElementById('lbl-username');
-    const lblXp = document.getElementById('lbl-xp');
-    const lblLoginDays = document.getElementById('lbl-login-days');
-    const lblUserLevel = document.getElementById('lbl-user-level');
-
-    if (lblUsername) lblUsername.textContent = data.nickname || "學生";
-    if (lblXp) lblXp.textContent = data.xp || 0;
-    if (lblLoginDays) lblLoginDays.textContent = data.loginDays || 0;
-    if (lblUserLevel) lblUserLevel.textContent = data.currentLevel || "1A";
-}
-
-// 事件綁定與彈窗控制
-function setupNavigationAndModals() {
-    // 登入 / 註冊 頁籤切換
-    safeAddEventListener('tab-login', 'click', () => {
-        isRegisterMode = false;
-        document.getElementById('tab-login')?.classList.add('active');
-        document.getElementById('tab-register')?.classList.remove('active');
-        document.getElementById('register-extended-fields')?.classList.add('hidden');
-        const btnAuth = document.getElementById('btn-auth-submit');
-        if (btnAuth) btnAuth.textContent = "進入挑戰";
-    });
-
-    safeAddEventListener('tab-register', 'click', () => {
-        isRegisterMode = true;
-        document.getElementById('tab-register')?.classList.add('active');
-        document.getElementById('tab-login')?.classList.remove('active');
-        document.getElementById('register-extended-fields')?.classList.remove('hidden');
-        const btnAuth = document.getElementById('btn-auth-submit');
-        if (btnAuth) btnAuth.textContent = "確認註冊";
-    });
-
-    // 送出 登入/註冊
-    safeAddEventListener('btn-auth-submit', 'click', async () => {
-        const email = document.getElementById('email-input')?.value.trim();
-        const password = document.getElementById('password-input')?.value.trim();
-
-        if (!email || !password) {
-            alert("請輸入 Email 與密碼！");
-            return;
-        }
-
-        try {
-            if (isRegisterMode) {
-                const nickname = document.getElementById('nickname-input')?.value.trim();
-                const birthday = document.getElementById('birthday-input')?.value;
-                
-                if (!birthday) {
-                    alert("請選擇出生年月日！");
-                    return;
-                }
-
-                await AuthService.register(email, password, nickname, birthday);
-                alert("註冊成功！歡迎加入！");
-            } else {
-                await AuthService.login(email, password);
-            }
-        } catch (error) {
-            alert(error.message || "操作失敗，請重試！");
-        }
-    });
-
-    // 程度切換彈窗控制
-    safeAddEventListener('btn-level-trigger', 'click', () => {
-        document.getElementById('modal-select-initial-level')?.classList.remove('hidden');
-    });
-
-    safeAddEventListener('btn-close-level-modal', 'click', () => {
-        document.getElementById('modal-select-initial-level')?.classList.add('hidden');
-    });
-
-    safeAddEventListener('btn-confirm-initial-level', 'click', async () => {
-        const select = document.getElementById('initial-level-select');
-        if (select && currentUser) {
-            currentUser.currentLevel = select.value;
-            await FirestoreService.saveUserData(currentUser.uid, { currentLevel: select.value });
-            updateUserUI(currentUser);
-            document.getElementById('modal-select-initial-level')?.classList.add('hidden');
-        }
-    });
-
-    // 鎖定提示彈窗
-    safeAddEventListener('btn-close-locked-modal', 'click', () => {
-        document.getElementById('modal-locked')?.classList.add('hidden');
-    });
-
-    // 課前暖身彈窗控制
-    safeAddEventListener('btn-close-warmup-ask', 'click', () => {
-        document.getElementById('modal-warmup-ask')?.classList.add('hidden');
-    });
+  });
 }
