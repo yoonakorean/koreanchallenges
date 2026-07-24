@@ -1,169 +1,339 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>韓語雲端學習系統</title>
-  <!-- Bootstrap 5 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Bootstrap Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-  <!-- 自訂樣式檔案路徑修正 -->
-  <link rel="stylesheet" href="./style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多語種雲端遊戲化學習系統</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script src="js/firebase-config.js"></script>
+
+    <style>
+        :root {
+            --duo-green: #58cc02;
+            --duo-green-shadow: #46a302;
+            --duo-blue: #1cb0f6;
+            --duo-blue-shadow: #1899d6;
+            --duo-gray: #e5e7eb;
+            --duo-red: #ff4b4b;
+            --duo-red-shadow: #ea2b2b;
+            --duo-gold: #f59e0b;
+            --duo-lightning: #a5b4fc;
+            --duo-fire-red: #ef4444;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f9fafb;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .app-container {
+            width: 100%; max-width: 600px; margin: 0 auto; min-height: 100vh;
+            background: #ffffff; display: flex; flex-direction: column; position: relative;
+            box-sizing: border-box;
+        }
+
+        /* 🌟 頂部資訊列 (保持簡潔，絕不顯示 Email、到期日等隱私資訊) */
+        .user-meta-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 14px; background: #ffffff; border-bottom: 2px solid #e5e7eb;
+            font-size: 0.88rem; white-space: nowrap; position: relative; z-index: 100;
+        }
+
+        .user-meta-item {
+            display: inline-flex; align-items: center; gap: 5px; font-weight: bold;
+            color: #374151; cursor: pointer; padding: 6px 8px; border-radius: 10px;
+            user-select: none; position: relative;
+        }
+
+        .notification-badge {
+            position: absolute; top: 2px; right: 2px; width: 10px; height: 10px;
+            background-color: var(--duo-red); border-radius: 50%; border: 2px solid white;
+        }
+
+        .btn-3d, .stage-btn-3d, .tab-btn {
+            font-size: 0.9rem !important; font-weight: bold; border: none;
+            border-radius: 16px; cursor: pointer; transition: all 0.1s ease;
+            user-select: none; touch-action: manipulation;
+        }
+        
+        .btn-3d-primary { background: var(--duo-green); color: white; box-shadow: 0 4px 0 var(--duo-green-shadow); }
+        .btn-3d-primary:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--duo-green-shadow); }
+        .btn-3d-secondary { background: #ffffff; color: #4b5563; border: 2px solid #e5e7eb; box-shadow: 0 4px 0 #e5e7eb; }
+        .btn-3d-secondary:active { transform: translateY(2px); box-shadow: 0 1px 0 #e5e7eb; }
+
+        .btn-google {
+            background: #ffffff; color: #374151; border: 2px solid #e5e7eb;
+            box-shadow: 0 4px 0 #e5e7eb; display: flex; align-items: center;
+            justify-content: center; gap: 10px; width: 100%; padding: 12px;
+            font-size: 1rem; font-weight: bold; border-radius: 16px; cursor: pointer;
+        }
+        .btn-google:active { transform: translateY(2px); box-shadow: 0 1px 0 #e5e7eb; }
+
+        .map-container { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 15px; width: 100%; box-sizing: border-box; }
+        .unit-card { width: 100%; background: #ffffff; border: 2px solid #e5e7eb; border-radius: 20px; padding: 16px; box-shadow: 0 4px 0 #f3f4f6; box-sizing: border-box; }
+        .unit-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px; margin-bottom: 15px; }
+        .unit-title { font-size: 1rem; font-weight: bold; color: #1f2937; }
+        .stages-path { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .stage-btn-3d { width: 72px; height: 72px; border-radius: 50%; background: var(--duo-blue); color: white; box-shadow: 0 5px 0 var(--duo-blue-shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .stage-btn-3d.locked { background: #9ca3af !important; box-shadow: 0 5px 0 #6b7280 !important; opacity: 0.7; cursor: not-allowed; }
+
+        .custom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .custom-modal-card { background: white; border-radius: 24px; padding: 24px 20px; width: 85%; max-width: 380px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.25); position: relative; box-sizing: border-box; }
+
+        .close-icon-circle { position: absolute; top: 14px; left: 16px; width: 28px; height: 28px; background: #f3f4f6; color: #9ca3af; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; cursor: pointer; }
+
+        .tab-btn { flex: 1; padding: 10px; border: none; background: #ffffff; color: #6b7280; border-radius: 12px; cursor: pointer; border: 1px solid #e5e7eb; }
+        .tab-btn.active { background: var(--duo-blue); color: white; border-color: var(--duo-blue); box-shadow: 0 3px 0 var(--duo-blue-shadow); }
+
+        .nav-tab-btn { padding: 6px 12px; border: 2px solid #e5e7eb; background: #f9fafb; color: #6b7280; border-radius: 12px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
+        .nav-tab-btn.active { background: var(--duo-blue); color: white; border-color: var(--duo-blue-shadow); }
+
+        .rank-card-box { background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 16px; padding: 16px; margin-top: 12px; }
+        .friend-request-card { background: #ffffff; border: 2px solid var(--duo-blue); border-radius: 14px; padding: 12px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+
+        .profile-avatar-large { width: 72px; height: 72px; border-radius: 50%; border: 3px solid var(--duo-blue); margin: 0 auto 10px auto; object-fit: cover; }
+        .course-badge-pill { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: bold; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; margin: 2px; }
+
+        .hidden { display: none !important; }
+        input, select { width: 100%; padding: 10px 12px; margin: 6px 0; border-radius: 12px; border: 2px solid #e5e7eb; box-sizing: border-box; font-size: 0.95rem; }
+    </style>
 </head>
 <body>
 
-  <!-- 頂部導覽列 -->
-  <nav class="navbar border-bottom sticky-top bg-body-tertiary px-3 shadow-sm">
-    <div class="container-fluid d-flex justify-content-between align-items-center">
-      <a class="navbar-brand fw-bold text-primary" href="#">
-        <i class="bi bi-translate me-2"></i>韓語雲端學習系統
-      </a>
-      
-      <div class="d-flex align-items-center gap-2">
-        <!-- 程度切換選單 (8個完整級別) -->
-        <select id="levelSelect" class="form-select form-select-sm border-primary" style="width: auto;">
-          <option value="0A">0A 認識字母</option>
-          <option value="1A">1A 基礎級</option>
-          <option value="1B">1B 初級</option>
-          <option value="2A">2A 初中級</option>
-          <option value="2B">2B 中級</option>
-          <option value="3A">3A 中高級</option>
-          <option value="3B">3B 高級</option>
-          <option value="4A">4A 精通級</option>
-        </select>
-
-        <!-- 個人資料 / 登入區域 -->
-        <div id="userProfileArea" class="d-flex align-items-center gap-2">
-          <button id="loginBtn" class="btn btn-primary btn-sm px-3 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal">
-            <i class="bi bi-person-fill me-1"></i> 登入 / 註冊
-          </button>
-          <div id="userInfo" class="d-none d-flex align-items-center gap-2">
-            <span id="userDisplayName" class="fw-bold small text-secondary"></span>
-            <button id="profileModalBtn" class="btn btn-sm btn-outline-secondary rounded-pill" data-bs-toggle="modal" data-bs-target="#profileModal">個人資料</button>
-            <button id="logoutBtn" class="btn btn-sm btn-outline-danger rounded-pill">登出</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </nav>
-
-  <!-- 主要學習內容區塊 (保持原樣不變) -->
-  <main class="container my-4">
-    <div id="mainContent">
-      <!-- 語音模式、錄音功能與課程內容渲染區域 -->
-    </div>
-  </main>
-
-  <!-- 漂亮的登入 / 註冊 Modal -->
-  <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-        
-        <!-- Modal 頂部設計 -->
-        <div class="modal-header bg-primary text-white border-0 py-3">
-          <h5 class="modal-title fw-bold" id="authModalLabel">
-            <i class="bi bi-person-circle me-2"></i>歡迎回到韓語學習系統
-          </h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-
-        <div class="modal-body p-4">
-          <!-- 1. Google / Gmail 一鍵快捷登入區 -->
-          <div class="d-grid mb-3">
-            <button id="googleAuthBtn" class="btn btn-outline-dark btn-lg d-flex align-items-center justify-content-center gap-2 rounded-3 border-2 py-2 fs-6 fw-bold transition-all shadow-sm">
-              <svg width="20" height="20" viewBox="0 0 48 48">
-                <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-                <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-                <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
-                <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
-              </svg>
-              使用 Gmail / Google 帳號登入
-            </button>
-          </div>
-
-          <!-- 分隔線 -->
-          <div class="position-relative text-center my-4">
-            <hr class="text-secondary opacity-25">
-            <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small fw-medium">或使用 Email 帳號</span>
-          </div>
-
-          <!-- 2. Email 輸入表單 -->
-          <form id="authForm">
-            <div class="form-floating mb-3">
-              <input type="email" class="form-control rounded-3" id="authEmail" placeholder="name@example.com" required>
-              <label for="authEmail"><i class="bi bi-envelope me-1"></i>Email 信箱</label>
-            </div>
+    <!-- 🔑 1. Google 登入視窗 (取消帳密註冊，白名單嚴格控管) -->
+    <div class="custom-modal" id="login-modal">
+        <div class="custom-modal-card">
+            <div style="font-size: 2.5rem; color: var(--duo-blue); margin-bottom: 10px;"><i class="fa-solid fa-graduation-cap"></i></div>
+            <h3 style="margin: 0 0 8px 0;">歡迎來到多語種大冒險</h3>
+            <p style="font-size: 0.85rem; color:#6b7280; margin-bottom: 20px;">請使用已被系統開通白名單的 Google 帳號登入</p>
             
-            <div class="form-floating mb-4">
-              <input type="password" class="form-control rounded-3" id="authPassword" placeholder="Password" required>
-              <label for="authPassword"><i class="bi bi-lock me-1"></i>密碼</label>
-            </div>
-
-            <div class="d-grid gap-2">
-              <button type="submit" id="emailLoginBtn" class="btn btn-primary btn-lg rounded-3 fs-6 fw-bold shadow-sm">
-                登入帳號
-              </button>
-              <button type="button" id="emailSignUpBtn" class="btn btn-outline-secondary btn-lg rounded-3 fs-6 fw-bold">
-                免費註冊新帳號
-              </button>
-            </div>
-          </form>
+            <button class="btn-google" id="btn-google-login">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google">
+                使用 Google 帳號登入
+            </button>
+            <div id="login-error-msg" style="color: var(--duo-red); font-size: 0.82rem; margin-top: 12px;" class="hidden"></div>
         </div>
-      </div>
     </div>
-  </div>
 
-  <!-- 個人資料 Modal -->
-  <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content border-0 shadow rounded-4">
-        <div class="modal-header border-bottom">
-          <h5 class="modal-title fw-bold"><i class="bi bi-gear-fill me-2"></i>個人資料與設定</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- 👤 2. 首次登入 - 設定暱稱 Modal (profileCompleted = false 時觸發) -->
+    <div id="modal-setup-nickname" class="custom-modal hidden">
+        <div class="custom-modal-card">
+            <h3 style="margin-top:0;"><i class="fa-solid fa-user-gear" style="color:var(--duo-blue);"></i> 設定您的學習暱稱</h3>
+            <p style="font-size: 0.82rem; color: #6b7280; margin-bottom: 12px;">請設定排行榜上顯示的名稱 (2~12字，支援中英韓數，一年僅能修改一次)</p>
+            <input type="text" id="input-setup-nickname" placeholder="例如：韓語小霸王" maxlength="12" />
+            <div id="nickname-error-msg" style="color: var(--duo-red); font-size: 0.8rem; text-align: left;" class="hidden"></div>
+            <button id="btn-save-initial-nickname" class="btn-3d btn-3d-primary" style="width:100%; padding:10px; margin-top:15px;">完成設定並開始學習</button>
         </div>
-        <div class="modal-body p-4">
-          <div class="mb-3">
-            <label class="form-label text-muted small fw-bold">帳號 Email</label>
-            <input type="text" id="profileEmail" class="form-control bg-light border-0 fw-bold" readonly>
-          </div>
+    </div>
 
-          <!-- 1. 介面語言選擇 -->
-          <div class="mb-3 border-top pt-3">
-            <label for="profileLanguageSelect" class="form-label fw-bold">介面語言選擇</label>
-            <select id="profileLanguageSelect" class="form-select">
-              <option value="zh-TW">繁體中文</option>
-              <option value="ko">한국어 (韓文)</option>
-              <option value="en">English</option>
+    <!-- 切換程度 Modal -->
+    <div id="modal-select-initial-level" class="custom-modal hidden">
+        <div class="custom-modal-card">
+            <div class="close-icon-circle" id="btn-close-level-modal"><i class="fa-solid fa-xmark"></i></div>
+            <h3 style="margin: 10px 0 8px 0; color: #1f2937;">選擇課程程度</h3>
+            <select id="initial-level-select" style="font-weight: bold; margin-bottom: 15px;">
+                <option value="0A">0A 認識字母</option>
+                <option value="1A" selected>1A 基礎級</option>
+                <option value="1B">1B 初級</option>
+                <option value="2A">2A 中初級</option>
+                <option value="2B">2B 中級</option>
+                <option value="3A">3A 中高級</option>
+                <option value="3B">3B 高級</option>
+                <option value="4A">4A 精通級</option>
+                <option value="TOPIK1">TOPIK 1 檢定</option>
             </select>
-          </div>
-
-          <!-- 2. 開通程度權限 (8個完整級別標籤) -->
-          <div class="mb-3 border-top pt-3">
-            <label class="form-label fw-bold mb-2">開通程度權限</label>
-            <div id="userPermissionsList" class="d-flex flex-wrap gap-2">
-              <span class="badge rounded-pill bg-secondary" id="perm0A">0A 認識字母</span>
-              <span class="badge rounded-pill bg-secondary" id="perm1A">1A 基礎級</span>
-              <span class="badge rounded-pill bg-secondary" id="perm1B">1B 初級</span>
-              <span class="badge rounded-pill bg-secondary" id="perm2A">2A 初中級</span>
-              <span class="badge rounded-pill bg-secondary" id="perm2B">2B 中級</span>
-              <span class="badge rounded-pill bg-secondary" id="perm3A">3A 中高級</span>
-              <span class="badge rounded-pill bg-secondary" id="perm3B">3B 高級</span>
-              <span class="badge rounded-pill bg-secondary" id="perm4A">4A 精通級</span>
-            </div>
-          </div>
+            <button id="btn-confirm-initial-level" class="btn-3d btn-3d-primary" style="width: 100%; padding: 10px;">確定切換</button>
         </div>
-        <div class="modal-footer border-top-0">
-          <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">關閉</button>
-          <button type="button" id="saveProfileBtn" class="btn btn-primary rounded-pill px-4">儲存變更</button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
-  <!-- 主程式進入點 -->
-  <script type="module" src="src/app.js"></script>
+    <!-- 修改暱稱 Modal -->
+    <div id="modal-edit-nickname" class="custom-modal hidden">
+        <div class="custom-modal-card">
+            <h3 style="margin-top:0;">修改公開暱稱</h3>
+            <p style="font-size: 0.8rem; color: #ef4444; margin-bottom: 10px;">⚠️ 注意：暱稱一年僅能修改一次！</p>
+            <input type="text" id="input-new-nickname" placeholder="請輸入新暱稱 (2~12字)" maxlength="12" />
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button id="btn-save-nickname" class="btn-3d btn-3d-primary" style="flex:1; padding:10px;">儲存修改</button>
+                <button id="btn-cancel-nickname" class="btn-3d btn-3d-secondary" style="flex:1; padding:10px;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增好友 Modal -->
+    <div id="modal-add-friend" class="custom-modal hidden">
+        <div class="custom-modal-card">
+            <h3 style="margin-top:0;"><i class="fa-solid fa-user-plus" style="color: var(--duo-blue);"></i> 新增好友</h3>
+            <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 10px;">請輸入好友的 Email 帳號：</p>
+            <input type="email" id="input-friend-id" placeholder="好友 Email" />
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button id="btn-submit-add-friend" class="btn-3d btn-3d-primary" style="flex:1; padding:10px;">發送邀請</button>
+                <button id="btn-cancel-add-friend" class="btn-3d btn-3d-secondary" style="flex:1; padding:10px;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 鎖定關卡提示 Modal -->
+    <div id="modal-locked" class="custom-modal hidden">
+        <div class="custom-modal-card">
+            <div style="font-size: 2.8rem; color: #f59e0b; margin-bottom: 10px;"><i class="fa-solid fa-lock"></i></div>
+            <h3 style="margin: 0 0 8px 0; color: #1f2937;">關卡/課程鎖定中</h3>
+            <p id="lbl-locked-msg" style="margin: 0 0 20px 0; color: #6b7280; font-size: 0.85rem;">您尚未開通該課程或未解鎖前面關卡！</p>
+            <button id="btn-close-locked-modal" class="btn-3d btn-3d-primary" style="width: 100%; padding: 10px;">我知道了</button>
+        </div>
+    </div>
+
+    <!-- 登出確認 Modal -->
+    <div id="modal-logout-confirm" class="custom-modal hidden">
+        <div class="custom-modal-card">
+            <h3 style="margin: 0 0 10px 0; color: #1f2937;">確定要登出嗎？</h3>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button id="btn-logout-yes" class="btn-3d" style="flex: 1; padding: 10px; background: var(--duo-red); color: white; box-shadow: 0 4px 0 var(--duo-red-shadow);">登出</button>
+                <button id="btn-logout-no" class="btn-3d btn-3d-secondary" style="flex: 1; padding: 10px;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主應用容器 (預設進入 Course Map 學習地圖) -->
+    <div class="app-container hidden" id="main-app">
+        
+        <!-- 首頁頂端資訊列（保持乾淨，只顯現暱稱、連續天數、XP、Level） -->
+        <div class="user-meta-bar">
+            <div class="user-meta-item" id="btn-profile-trigger">
+                <i class="fa-solid fa-user" style="color: var(--duo-blue); font-size: 1.05rem;"></i>
+                <span id="lbl-username">學生</span>
+                <div id="profile-notif-badge" class="notification-badge hidden"></div>
+            </div>
+
+            <div class="user-meta-item">
+                <i class="fa-solid fa-fire" style="color: var(--duo-fire-red); font-size: 1.05rem;"></i>
+                <span id="lbl-login-days">1</span>天
+            </div>
+
+            <div class="user-meta-item">
+                <i class="fa-solid fa-star" style="color: var(--duo-gold); font-size: 1.05rem;"></i>
+                <span id="lbl-xp">0</span>
+            </div>
+
+            <div class="user-meta-item" id="btn-level-trigger">
+                <span id="lbl-user-level" style="color: var(--duo-blue);">1A</span>
+                <i class="fa-solid fa-caret-down" style="font-size: 0.75rem; color: #9ca3af;"></i>
+            </div>
+        </div>
+
+        <!-- 視圖 1：首頁 / 課程地圖 (Home / Course Map - 保持原樣) -->
+        <div id="map-view" class="map-container">
+            <div id="units-map-list" style="width: 100%; display: flex; flex-direction: column; gap: 16px;"></div>
+        </div>
+
+        <!-- 視圖 2：排行榜與 Profile 會員詳細資料頁 -->
+        <div id="profile-view" class="hidden" style="padding: 15px; width: 100%; box-sizing: border-box;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <button id="btn-profile-back-map" class="btn-3d btn-3d-secondary" style="padding: 6px 14px;">
+                    <i class="fa-solid fa-arrow-left"></i> 返回地圖
+                </button>
+
+                <div style="display: flex; gap: 6px;">
+                    <button class="nav-tab-btn active" id="btn-view-leaderboard">
+                        <i class="fa-solid fa-trophy"></i> 排行榜
+                    </button>
+                    <button class="nav-tab-btn" id="btn-view-profile">
+                        <i class="fa-solid fa-id-card"></i> 我的帳號
+                    </button>
+                </div>
+            </div>
+
+            <!-- 分頁 A：排行榜 -->
+            <div id="sub-page-leaderboard" class="unit-card">
+                <h3 style="margin-top:0; color: #1f2937; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px;">
+                    <i class="fa-solid fa-trophy" style="color: var(--duo-gold);"></i> 學習排行榜
+                </h3>
+                
+                <div style="display: flex; gap: 8px; margin-bottom: 12px; background: #f3f4f6; padding: 6px; border-radius: 14px;">
+                    <button class="tab-btn active" id="tab-leaderboard-friends">好友榜</button>
+                    <button class="tab-btn" id="tab-leaderboard-global">全球總榜</button>
+                </div>
+
+                <div id="pending-friend-requests-container" class="hidden"></div>
+
+                <div id="content-rank-friends" class="rank-card-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                        <span style="font-weight:bold; color:#374151;">我的好友列表</span>
+                        <button id="btn-open-add-friend" class="btn-3d btn-3d-primary" style="padding: 6px 12px; font-size: 0.8rem !important;">
+                            <i class="fa-solid fa-user-plus"></i> 新增好友
+                        </button>
+                    </div>
+                    <div id="friends-list-container" style="display:flex; flex-direction:column; gap:10px;"></div>
+                </div>
+
+                <div id="content-rank-global" class="rank-card-box hidden" style="text-align: center;">
+                    <p style="font-size: 0.9rem; color: #6b7280; margin: 0;">🏆 <span id="lbl-global-rank-level">1A</span> 程度全球排行榜載入中...</p>
+                </div>
+            </div>
+
+            <!-- 分頁 B：Profile 會員集中管理頁面 (詳細集中於此) -->
+            <div id="sub-page-profile" class="unit-card hidden">
+                <div style="text-align: center; border-bottom: 2px solid #f3f4f6; padding-bottom: 15px;">
+                    <img id="profile-user-avatar" src="https://via.placeholder.com/72" class="profile-avatar-large" alt="User Avatar">
+                    <h3 style="margin: 0; color: #1f2937;"><span id="profile-nickname">學生</span> 
+                        <button id="btn-open-edit-nickname" style="border:none; background:none; color:var(--duo-blue); cursor:pointer; font-size:0.85rem;"><i class="fa-solid fa-pen-to-square"></i></button>
+                    </h3>
+                    <p style="font-size: 0.82rem; color: #6b7280; margin: 4px 0 0 0;" id="profile-email">email@example.com</p>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
+                    <div style="display:flex; justify-style:space-between; justify-content: space-between; font-size: 0.9rem;">
+                        <span style="color: #6b7280;">真實姓名：</span>
+                        <span id="profile-realname" style="font-weight:bold; color:#374151;">-</span>
+                    </div>
+                    <div style="display:flex; justify-content: space-between; font-size: 0.9rem;">
+                        <span style="color: #6b7280;">身份別：</span>
+                        <span id="profile-role" style="font-weight:bold; color:var(--duo-blue);">Student</span>
+                    </div>
+                    <div style="display:flex; justify-content: space-between; font-size: 0.9rem;">
+                        <span style="color: #6b7280;">會員狀態：</span>
+                        <span id="profile-status" style="font-weight:bold; color:var(--duo-green);">開通中</span>
+                    </div>
+
+                    <hr style="border: none; border-top: 1px dashed #e5e7eb; margin: 4px 0;">
+
+                    <div>
+                        <span style="font-size: 0.88rem; font-weight: bold; color: #374151; display: block; margin-bottom: 6px;">已開通課程與到期日：</span>
+                        <div id="profile-memberships-list" style="display:flex; flex-direction:column; gap:6px;">
+                            <!-- 動態讀取 memberships Collection -->
+                        </div>
+                    </div>
+
+                    <hr style="border: none; border-top: 1px dashed #e5e7eb; margin: 4px 0;">
+
+                    <div style="display:flex; justify-content: space-between; font-size: 0.9rem;">
+                        <span style="color: #6b7280;">累積經驗 (XP)：</span>
+                        <span style="color: var(--duo-gold); font-weight: bold;"><i class="fa-solid fa-star"></i> <span id="profile-xp">0</span></span>
+                    </div>
+                    <div style="display:flex; justify-content: space-between; font-size: 0.9rem;">
+                        <span style="color: #6b7280;">連續簽到：</span>
+                        <span style="color: var(--duo-fire-red); font-weight: bold;"><i class="fa-solid fa-fire"></i> <span id="profile-streak">1</span> 天</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 25px;">
+                    <button id="btn-trigger-logout" class="btn-3d" style="width: 100%; padding: 12px; background: var(--duo-red); color: white; box-shadow: 0 4px 0 var(--duo-red-shadow);">
+                        <i class="fa-solid fa-right-from-bracket"></i> 登出系統
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module" src="./src/app.js"></script>
 </body>
 </html>
