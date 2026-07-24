@@ -347,34 +347,44 @@
 </head>
 <body>
 
-    <!-- Firebase 登入視窗 -->
-    <div class="custom-modal" id="login-modal">
-        <div class="custom-modal-card">
-            <h3><i class="fa-solid fa-cloud" style="color: var(--duo-blue);"></i> 歡迎來到多語種大冒險</h3>
-            <p style="font-size: 0.85rem; color:#6b7280; margin-bottom: 15px;">每天陪你一起輕鬆學語言</p>
-            
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button id="tab-login" class="tab-btn active">會員登入</button>
-                <button id="tab-register" class="tab-btn">新用戶註冊</button>
-            </div>
-
-            <input type="email" id="email-input" placeholder="電子信箱 (Email)" required />
-            <input type="password" id="password-input" placeholder="密碼 (Password 六位數以上)" required />
-            
-            <div id="register-extended-fields" class="hidden">
-                <input type="text" id="realname-input" placeholder="真實姓名" />
-                <input type="date" id="birthday-input" placeholder="生日" />
-                <input type="text" id="nickname-input" placeholder="顯示暱稱（一年限改一次）" required />
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin: 10px 0; width: 100%;">
-                <input type="checkbox" id="chk-remember-me" style="width: auto; margin: 0; cursor: pointer;" />
-                <label for="chk-remember-me" style="font-size: 0.85rem; color: #4b5563; cursor: pointer;">記住我的帳號與密碼</label>
-            </div>
-
-            <button class="btn-3d btn-3d-primary" id="btn-auth-submit" style="width: 100%; padding: 12px;">進入挑戰</button>
+<!-- 登入與註冊視窗 -->
+<div class="custom-modal" id="login-modal">
+    <div class="custom-modal-card">
+        <h3><i class="fa-solid fa-cloud" style="color: var(--duo-blue);"></i> 歡迎來到多語種大冒險</h3>
+        <p style="font-size: 0.85rem; color:#6b7280; margin-bottom: 15px;">每天陪你一起輕鬆學習</p>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button id="tab-login" class="tab-btn active">會員登入</button>
+            <button id="tab-register" class="tab-btn">新用戶註冊</button>
         </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; text-align: left;">
+            <div>
+                <label style="font-size: 0.8rem; font-weight: bold; color: #4b5563;">電子信箱 (Email)</label>
+                <input type="email" id="email-input" placeholder="example@email.com" required />
+            </div>
+
+            <div>
+                <label style="font-size: 0.8rem; font-weight: bold; color: #4b5563;">密碼 (Password)</label>
+                <input type="password" id="password-input" placeholder="請輸入 6 位數以上密碼" required />
+            </div>
+
+            <!-- 註冊專用擴充欄位 -->
+            <div id="register-extended-fields" class="hidden" style="display: flex; flex-direction: column; gap: 8px;">
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: bold; color: #4b5563;">顯示暱稱</label>
+                    <input type="text" id="nickname-input" placeholder="請輸入您的暱稱" />
+                </div>
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: bold; color: #4b5563;">出生年月日 (Birthday)</label>
+                    <input type="date" id="birthday-input" />
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-3d btn-3d-primary" id="btn-auth-submit" style="width: 100%; padding: 12px; margin-top: 15px;">進入挑戰</button>
     </div>
+</div>
 
     <!-- 切換/選擇程度 Modal -->
     <div id="modal-select-initial-level" class="custom-modal hidden">
